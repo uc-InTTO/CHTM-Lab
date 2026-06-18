@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 function BoxIcon() {
   return (
@@ -33,9 +34,14 @@ function EyeOffIcon() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  function handleSignIn() {
+    router.push("/dashboard");
+  }
 
   return (
     <div
@@ -95,6 +101,7 @@ export default function LoginPage() {
 
         <button
           type="button"
+          onClick={handleSignIn}
           className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#2e7d32" }}
         >
@@ -117,6 +124,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
+              onClick={() => router.push("/dashboard")}
               className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
               style={{ backgroundColor: "#eff6ff" }}
             >
