@@ -1,36 +1,15 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Dev Notes:
+1. leverage type Inference. dont over-annotate: if TypeScript can automatically figure out a variables type you dont need to specify it explicitly. 
+Bad: let name: string = "Alice";
+Good: let name = "Alice";
 
-## Getting Started
+2. Avoid the any TypeNever use any: it completely disables TypeScripts type-checking and essentially turns your code back into regular JavaScript. Use unknown instead: if the data type is truly unknown, use unknown, and then use type guards or typeof checks to narrow the type safely before executing operations on it.
 
-First, run the development server:
+3. Types vs. InterfacesUse Interfaces for Objects: the TypeScript documentation recommends using interface by default to describe the shape of objects and classes. Use Type Aliases for Everything Else: If you are defining unions (type ID = string | number;), tuples, or complex mapped types, use type.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+4. Use Union and Literal TypesAvoid "mystery switches" (booleans): Instead of passing booleans, use string literal union types to make your code intent crystal clear.
+Bad: function setTheme(isDark: boolean)
+Good: type Theme = "light" | "dark" | "auto"; function setTheme(theme: Theme)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Null SafetyAvoid unhandled null and undefined: In strict mode, null and undefined will not be assignable to other types unless explicitly allowed.
+Use Optional Chaining: safely access deeply nested properties using the "?". operator.
