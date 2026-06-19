@@ -138,6 +138,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
+              onClick={() => router.push("/student")}
               className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
               style={{ backgroundColor: "#fefce8" }}
             >
