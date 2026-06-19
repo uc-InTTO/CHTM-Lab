@@ -112,6 +112,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
+              onClick={() => router.push("/lmo")}
               className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
               style={{ backgroundColor: "#f5f0ff" }}
             >
