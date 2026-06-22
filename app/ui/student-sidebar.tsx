@@ -1,0 +1,169 @@
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+
+function BoxIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
+  );
+}
+
+function GridIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+  );
+}
+
+function MegaphoneIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 11 19-9-9 19-2-8-8-2z" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="21" r="1" />
+      <circle cx="19" cy="21" r="1" />
+      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" x2="21" y1="6" y2="6" />
+      <line x1="8" x2="21" y1="12" y2="12" />
+      <line x1="8" x2="21" y1="18" y2="18" />
+      <line x1="3" x2="3.01" y1="6" y2="6" />
+      <line x1="3" x2="3.01" y1="12" y2="12" />
+      <line x1="3" x2="3.01" y1="18" y2="18" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" x2="9" y1="12" y2="12" />
+    </svg>
+  );
+}
+
+const navSections = [
+  {
+    label: "OVERVIEW",
+    items: [
+      { Icon: GridIcon, label: "Dashboard", href: "/student" },
+      { Icon: MegaphoneIcon, label: "Announcements", href: "/student/announcements" },
+      { Icon: BellIcon, label: "Notifications", href: "/student/notifications" },
+    ],
+  },
+  {
+    label: "LAB",
+    items: [
+      { Icon: CartIcon, label: "Borrow", href: "/student/borrow" },
+      { Icon: ListIcon, label: "My List", href: "/student/my-list" },
+    ],
+  },
+];
+
+export default function StudentSidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  return (
+    <aside
+      className="flex flex-col h-screen shrink-0 overflow-hidden"
+      style={{ backgroundColor: "#1e3320", width: "260px" }}
+    >
+      <div className="flex items-center gap-3 px-5 pt-6 pb-5">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ backgroundColor: "#2d5a30" }}
+        >
+          <BoxIcon />
+        </div>
+        <div>
+          <p className="text-white font-bold text-sm leading-tight">LMO System</p>
+          <p className="text-xs" style={{ color: "#9e9e9e" }}>Student</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 py-2 overflow-y-auto">
+        {navSections.map((section) => (
+          <div key={section.label} className="mb-5">
+            <p
+              className="text-xs font-semibold tracking-wider px-3 mb-2"
+              style={{ color: "#535353" }}
+            >
+              {section.label}
+            </p>
+            {section.items.map(({ Icon, label, href }) => {
+              const isActive = pathname === href;
+              return (
+                <button
+                  key={href}
+                  onClick={() => router.push(href)}
+                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium mb-0.5 transition-colors"
+                  style={{
+                    backgroundColor: isActive ? "#2d6a30" : "transparent",
+                    color: isActive ? "#ffffff" : "#9e9e9e",
+                  }}
+                >
+                  <Icon />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      <div className="px-5 pb-5 pt-3 border-t" style={{ borderColor: "#2a4a2d" }}>
+        <div className="mb-3">
+          <p className="text-white text-sm font-semibold">Demo Student</p>
+          <p className="text-xs mt-0.5" style={{ color: "#7aa87e" }}>student@demo.chtm</p>
+          <span
+            className="inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium"
+            style={{ backgroundColor: "#2d6a30", color: "#a8e6ac" }}
+          >
+            Student
+          </span>
+        </div>
+        <button
+          onClick={() => router.push("/login")}
+          className="flex items-center gap-2 text-sm mt-3 mb-4 transition-opacity hover:opacity-80"
+          style={{ color: "#7aa87e" }}
+        >
+          <LogoutIcon />
+          Exit Demo
+        </button>
+        <p className="text-xs" style={{ color: "#3d5a40" }}>UC-CHTM Lab v1.0</p>
+      </div>
+    </aside>
+  );
+}
