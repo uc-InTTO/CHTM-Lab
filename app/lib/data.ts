@@ -435,3 +435,58 @@ export async function getHistoryStationLogs(): Promise<HistoryStationLog[]> {
 export async function getHistoryWasteLogs(): Promise<HistoryWasteLog[]> {
   return [];
 }
+
+export type StudentDashboardStats = {
+  itemsIssued: number;
+  itemsReturned: number;
+  pendingRequests: number;
+  activeSlips: number;
+};
+
+export type StudentBorrowRequest = {
+  id: number;
+  controlNo: string;
+  status: "Pending" | "Approved" | "Received";
+  submittedAt: string;
+  itemCount: number;
+};
+
+export type StudentBorrowing = {
+  id: number;
+  controlNo: string;
+  date: string;
+  section: string;
+  instructor: string;
+  floor: string;
+  station: string;
+  status: "active" | "returned" | "requested";
+  items: { name: string; issued: number; unit: string; timeIn: string }[];
+};
+
+export type StudentBreakage = {
+  id: number;
+  itemName: string;
+  qty: number;
+  date: string;
+  status: "pending" | "resolved";
+};
+
+export async function getStudentDashboardStats(): Promise<StudentDashboardStats> {
+  return { itemsIssued: 0, itemsReturned: 0, pendingRequests: 0, activeSlips: 0 };
+}
+
+export async function getStudentBorrowRequests(): Promise<StudentBorrowRequest[]> {
+  return [];
+}
+
+export async function getStudentBorrowDraft(): Promise<BorrowSession | null> {
+  return null;
+}
+
+export async function getStudentBorrowings(): Promise<StudentBorrowing[]> {
+  return [];
+}
+
+export async function getStudentBreakages(): Promise<StudentBreakage[]> {
+  return [];
+}
