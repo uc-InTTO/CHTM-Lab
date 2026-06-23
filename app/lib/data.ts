@@ -1,3 +1,5 @@
+import { getAdminFirestore } from "./firebase-admin";
+
 export type StatCard = {
   badge: string;
   count: number;
@@ -337,12 +339,172 @@ export type InventoryCategory = {
   totalPcs: number;
 };
 
+interface InventoryImportDoc {
+  rowIndex?: number;
+  kind?: "heading" | "item" | "empty" | string;
+  primaryText?: string;
+  secondaryText?: string;
+  values?: string[];
+  sourceName?: string;
+}
+
+const INVENTORY_COLLECTION = "inventoryImportRows";
+
+const INVENTORY_METADATA_ROWS = new Set([
+  "AY 2025-2026",
+  "I. Inventory/Preventive Maintenance",
+  "ITEM DESCRIPTION",
+  "Actual inventory dates: April 20-28, 2026",
+  "Qty",
+  "ONHAND",
+]);
+
+const CATEGORY_HINTS = [
+  " area",
+  "kitchen",
+  "room",
+  "section",
+  "floor",
+  "hall",
+  "lab",
+  "laboratory",
+  "bed set",
+  "bed skirting",
+  "bed pads",
+  "bed runners",
+  "bed sheets",
+  "pillows",
+  "pillow cases",
+  "towels",
+  "carpets",
+  "blanket",
+  "comforter",
+  "duvet cover",
+  "duvet filler",
+  "seat cover",
+  "table cloth",
+  "table skirting",
+  "table runner",
+  "table mat",
+  "long table cloth",
+  "bathrobe",
+];
+
+function normalizeText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function isMetadataRow(text: string) {
+  const normalized = normalizeText(text);
+  return INVENTORY_METADATA_ROWS.has(normalized) || normalized.toLowerCase().includes("inventory/preventive maintenance");
+}
+
+function parseQuantity(text: string) {
+  const matches = text.match(/\d+/g);
+  if (!matches || matches.length === 0) {
+    return null;
+  }
+
+  return Number.parseInt(matches[matches.length - 1], 10);
+}
+
+function looksLikeCategory(text: string) {
+  const normalized = normalizeText(text);
+  if (!normalized) {
+    return false;
+  }
+
+  const lower = normalized.toLowerCase();
+
+  if (normalized.length <= 40 && /^[A-Z0-9\s,&/'"().-]+$/.test(normalized)) {
+    return true;
+  }
+
+  return CATEGORY_HINTS.some((hint) => lower.includes(hint));
+}
+
+async function loadInventoryImportRows(): Promise<InventoryImportDoc[]> {
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection(INVENTORY_COLLECTION).orderBy("rowIndex", "asc").get();
+
+    return snapshot.docs.map((document) => document.data() as InventoryImportDoc);
+  } catch {
+    return [];
+  }
+}
+
+function buildInventoryCategories(rows: InventoryImportDoc[]): InventoryCategory[] {
+  const categories = new Map<string, InventoryItem[]>();
+  let currentCategory = "Imported Inventory";
+  let nextItemId = 1;
+
+  const ensureCategory = (name: string) => {
+    if (!categories.has(name)) {
+      categories.set(name, []);
+    }
+  };
+
+  ensureCategory(currentCategory);
+
+  for (const row of rows) {
+    const primaryText = normalizeText(row.primaryText ?? "");
+    const secondaryText = normalizeText(row.secondaryText ?? "");
+    const values = row.values ?? [];
+
+    if (!primaryText || isMetadataRow(primaryText) || isMetadataRow(secondaryText)) {
+      continue;
+    }
+
+    const quantity = parseQuantity(secondaryText) ?? values.map(parseQuantity).find((value) => value !== null) ?? null;
+    const isCategory = row.kind === "heading" && quantity === null && looksLikeCategory(primaryText);
+
+    if (isCategory) {
+      currentCategory = primaryText;
+      ensureCategory(currentCategory);
+      continue;
+    }
+
+    ensureCategory(currentCategory);
+
+    const total = quantity ?? 1;
+    const item: InventoryItem = {
+      id: nextItemId,
+      name: primaryText,
+      unit: "pc/s",
+      total,
+      available: total,
+      inKitchenSet: null,
+      status: total > 10 ? "Good" : total > 3 ? "Fair" : "Poor",
+    };
+
+    categories.get(currentCategory)?.push(item);
+    nextItemId += 1;
+  }
+
+  return Array.from(categories.entries())
+    .map(([name, items]) => ({
+      name,
+      items,
+      totalPcs: items.reduce((sum, item) => sum + item.total, 0),
+    }))
+    .filter((category) => category.items.length > 0);
+}
+
 export async function getInventoryStats(): Promise<InventoryStats> {
-  return { equipmentTypes: 0, totalInventory: 0, availableToBorrow: 0, inKitchenSets: 0 };
+  const categories = await getInventoryCategories();
+
+  return {
+    equipmentTypes: categories.reduce((sum, category) => sum + category.items.length, 0),
+    totalInventory: categories.reduce((sum, category) => sum + category.totalPcs, 0),
+    availableToBorrow: categories.reduce((sum, category) => sum + category.items.reduce((itemSum, item) => itemSum + item.available, 0), 0),
+    inKitchenSets: categories.reduce((sum, category) => sum + category.items.reduce((itemSum, item) => itemSum + (item.inKitchenSet ?? 0), 0), 0),
+  };
 }
 
 export async function getInventoryCategories(): Promise<InventoryCategory[]> {
-  return [];
+  const rows = await loadInventoryImportRows();
+  return buildInventoryCategories(rows);
 }
 
 export type ReportSummary = {
