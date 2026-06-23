@@ -10,6 +10,7 @@ export type Notification = {
   id: number;
   audience: string;
   sender: string;
+  message: string;
   time: string;
   group: string;
 };
