@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+
+import { auth } from "../lib/firebase";
 
 function BoxIcon() {
   return (
@@ -35,12 +38,56 @@ function EyeOffIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<"signIn" | "register">("signIn");
+  const [loginRole, setLoginRole] = useState<"student" | "instructor" | "lmo">("student");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSignIn() {
-    router.push("/dashboard");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage("");
+
+    if (!email.trim() || !password) {
+      setErrorMessage("Please enter your email and password.");
+      return;
+    }
+
+    if (mode === "register" && password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "register") {
+        await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+        router.push("/student");
+      } else {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+
+        if (loginRole === "student") {
+          router.push("/student");
+          return;
+        }
+
+        if (loginRole === "lmo") {
+          router.push("/lmo");
+          return;
+        }
+
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -61,8 +108,90 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <h2 className="text-lg font-bold text-gray-900 mb-5">Sign In</h2>
+      <form className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-2 gap-2 mb-5 rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signIn");
+              setErrorMessage("");
+            }}
+            className="rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: mode === "signIn" ? "#2e7d32" : "transparent",
+              color: mode === "signIn" ? "#ffffff" : "#4b5563",
+            }}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("register");
+              setErrorMessage("");
+            }}
+            className="rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: mode === "register" ? "#2e7d32" : "transparent",
+              color: mode === "register" ? "#ffffff" : "#4b5563",
+            }}
+          >
+            Registration
+          </button>
+        </div>
+
+        {mode === "signIn" ? (
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sign In As
+            </label>
+            <div className="grid grid-cols-3 gap-2 rounded-xl bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => setLoginRole("student")}
+                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
+                style={{
+                  backgroundColor: loginRole === "student" ? "#2e7d32" : "transparent",
+                  color: loginRole === "student" ? "#ffffff" : "#4b5563",
+                }}
+              >
+                Student
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginRole("instructor")}
+                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
+                style={{
+                  backgroundColor: loginRole === "instructor" ? "#2e7d32" : "transparent",
+                  color: loginRole === "instructor" ? "#ffffff" : "#4b5563",
+                }}
+              >
+                Instructor
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginRole("lmo")}
+                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
+                style={{
+                  backgroundColor: loginRole === "lmo" ? "#2e7d32" : "transparent",
+                  color: loginRole === "lmo" ? "#ffffff" : "#4b5563",
+                }}
+              >
+                LMO Staff
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <h2 className="text-lg font-bold text-gray-900 mb-5">
+          {mode === "signIn" ? "Sign In" : "Student Registration"}
+        </h2>
+
+        {mode === "register" ? (
+          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Registration is for students only. LMO staff and instructors will use their assigned email and password.
+          </p>
+        ) : null}
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -99,13 +228,34 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {mode === "register" ? (
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-600"
+            />
+          </div>
+        ) : null}
+
+        {errorMessage ? (
+          <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <button
-          type="button"
-          onClick={handleSignIn}
+          type="submit"
+          disabled={isSubmitting}
           className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#2e7d32" }}
         >
-          Sign In
+          {isSubmitting ? "Please wait..." : mode === "signIn" ? "Sign In" : "Create Account"}
         </button>
 
         <div className="mt-6">
@@ -151,7 +301,7 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
