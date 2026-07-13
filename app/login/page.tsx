@@ -3,8 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-
-import { auth } from "../lib/firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore/lite";
+import { auth, db } from "../lib/firebase";
 
 function BoxIcon() {
   return (
@@ -39,7 +39,7 @@ function EyeOffIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signIn" | "register">("signIn");
-  const [loginRole, setLoginRole] = useState<"student" | "instructor" | "lmo">("student");
+  const [loginRole, setLoginRole] = useState<"student" | "instructor" | "lmo">("student"); 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,23 +65,47 @@ export default function LoginPage() {
 
     try {
       if (mode === "register") {
-        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
+          role: "student",
+          createdAt: new Date().toISOString()
+        });
 
         router.push("/student");
+
       } else {
-        await signInWithEmailAndPassword(auth, email.trim(), password);
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
 
-        if (loginRole === "student") {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const userRole = userData.role;
+
+          switch (userRole) {
+            case "admin":
+            case "lmo":
+              router.push("/lmo"); 
+              break;
+            case "faculty":
+              router.push("/dashboard"); 
+              break;
+            case "student_assistant":
+              router.push("/lmo"); 
+              break;
+            case "student":
+            default:
+              router.push("/student"); 
+              break;
+          }
+        } else {
           router.push("/student");
-          return;
-        }
-
-        if (loginRole === "lmo") {
-          router.push("/lmo");
-          return;
-        }
-
-        router.push("/dashboard");
+        } 
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
@@ -139,49 +163,6 @@ export default function LoginPage() {
             Registration
           </button>
         </div>
-
-        {mode === "signIn" ? (
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sign In As
-            </label>
-            <div className="grid grid-cols-3 gap-2 rounded-xl bg-gray-100 p-1">
-              <button
-                type="button"
-                onClick={() => setLoginRole("student")}
-                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
-                style={{
-                  backgroundColor: loginRole === "student" ? "#2e7d32" : "transparent",
-                  color: loginRole === "student" ? "#ffffff" : "#4b5563",
-                }}
-              >
-                Student
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginRole("instructor")}
-                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
-                style={{
-                  backgroundColor: loginRole === "instructor" ? "#2e7d32" : "transparent",
-                  color: loginRole === "instructor" ? "#ffffff" : "#4b5563",
-                }}
-              >
-                Instructor
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginRole("lmo")}
-                className="rounded-lg px-2 py-2 text-xs font-semibold transition-colors"
-                style={{
-                  backgroundColor: loginRole === "lmo" ? "#2e7d32" : "transparent",
-                  color: loginRole === "lmo" ? "#ffffff" : "#4b5563",
-                }}
-              >
-                LMO Staff
-              </button>
-            </div>
-          </div>
-        ) : null}
 
         <h2 className="text-lg font-bold text-gray-900 mb-5">
           {mode === "signIn" ? "Sign In" : "Student Registration"}
@@ -257,50 +238,6 @@ export default function LoginPage() {
         >
           {isSubmitting ? "Please wait..." : mode === "signIn" ? "Sign In" : "Create Account"}
         </button>
-
-        <div className="mt-6">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/lmo")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#f5f0ff" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#7c3aed" }}>
-                LMO Custodian
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#9d71f5" }}>
-                Full access — inventory, reports, all logs
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#eff6ff" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#2563eb" }}>
-                Instructor
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#5b93f5" }}>
-                Dashboard, borrow, logs, waste, breakages
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/student")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#fefce8" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#b45309" }}>
-                Student
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#d97706" }}>
-                Announcements, borrow view, breakages, history
-              </p>
-            </button>
-          </div>
-        </div>
       </form>
     </div>
   );
