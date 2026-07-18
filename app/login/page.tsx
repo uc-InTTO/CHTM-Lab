@@ -39,6 +39,8 @@ function EyeOffIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signIn" | "register">("signIn");
+
+  const [loginRole, setLoginRole] = useState<"student" | "instructor" | "lmo">("student"); 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,22 +91,22 @@ export default function LoginPage() {
           switch (userRole) {
             case "admin":
             case "lmo":
-              router.push("/lmo");
+              router.push("/lmo"); 
               break;
             case "faculty":
-              router.push("/dashboard");
+              router.push("/dashboard"); 
               break;
             case "student_assistant":
-              router.push("/lmo");
+              router.push("/lmo"); 
               break;
             case "student":
             default:
-              router.push("/student");
+              router.push("/student"); 
               break;
           }
         } else {
           router.push("/student");
-        }
+        } 
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
@@ -131,7 +133,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl" onSubmit={handleSubmit}>
+      <form className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-2 mb-5 rounded-xl bg-gray-100 p-1">
           <button
             type="button"
