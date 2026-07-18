@@ -33,7 +33,7 @@ export default function LmoBreakagesSection({
         <a href="#" className="text-xs font-medium" style={{ color: "#16a34a" }}>View all &rsaquo;</a>
       </div>
 
-      <div className="flex items-center gap-2 px-5 pb-3">
+      <div className="flex flex-wrap items-center gap-2 px-5 pb-3">
         {periods.map((p) => (
           <button
             key={p}

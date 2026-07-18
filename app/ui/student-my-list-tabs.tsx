@@ -47,7 +47,7 @@ export default function StudentMyListTabs({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {(["Active", "Returned", "Requests", "Breakages"] as Tab[]).map((t) => {
           const isActive = tab === t;
           const c = tabColors[t];

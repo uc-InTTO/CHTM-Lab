@@ -96,12 +96,12 @@ export default function InventoryView({ categories }: { categories: InventoryCat
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl flex mb-4 overflow-hidden border border-gray-100">
+      <div className="bg-white rounded-2xl flex mb-4 overflow-x-auto border border-gray-100">
         {viewTabs.map((tab, index) => (
           <button
             key={tab.key}
             onClick={() => setViewTab(tab.key)}
-            className="flex-1 py-2.5 text-sm font-medium transition-colors"
+            className="flex-1 py-2.5 px-3 text-sm font-medium transition-colors whitespace-nowrap"
             style={{
               color: viewTab === tab.key ? "#111827" : "#9ca3af",
               borderBottom: viewTab === tab.key ? "2px solid #111827" : "2px solid transparent",
@@ -142,8 +142,8 @@ export default function InventoryView({ categories }: { categories: InventoryCat
 
             return (
               <div key={category.name} className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-gray-100">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-gray-500"><DishIcon /></span>
                     <p className="text-sm font-bold text-gray-900">{category.name}</p>
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
@@ -153,7 +153,8 @@ export default function InventoryView({ categories }: { categories: InventoryCat
                   <p className="text-xs text-gray-400">{category.totalPcs} total pcs</p>
                 </div>
 
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-160 text-sm">
                   <thead>
                     <tr className="border-b border-gray-50">
                       <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 w-full">Equipment Name</th>
@@ -195,6 +196,7 @@ export default function InventoryView({ categories }: { categories: InventoryCat
                     </tr>
                   </tfoot>
                 </table>
+                </div>
               </div>
             );
           })}

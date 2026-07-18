@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import ResponsiveSidebar from "./responsive-sidebar";
 
 function BoxIcon() {
   return (
@@ -96,10 +97,7 @@ export default function StudentSidebar() {
   const router = useRouter();
 
   return (
-    <aside
-      className="flex flex-col h-screen shrink-0 overflow-hidden"
-      style={{ backgroundColor: "#1e3320", width: "260px" }}
-    >
+    <ResponsiveSidebar subtitle="Student">
       <div className="flex items-center gap-3 px-5 pt-6 pb-5">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -164,6 +162,6 @@ export default function StudentSidebar() {
         </button>
         <p className="text-xs" style={{ color: "#3d5a40" }}>UC-CHTM Lab v1.0</p>
       </div>
-    </aside>
+    </ResponsiveSidebar>
   );
 }

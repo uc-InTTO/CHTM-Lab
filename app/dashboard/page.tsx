@@ -61,7 +61,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-start justify-between px-8 pt-8 pb-6">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-6 pb-4 sm:px-6 lg:px-8 lg:pt-8 lg:pb-6">
         <div>
           <p className="text-sm text-gray-500">Welcome,</p>
           <h1 className="text-2xl font-bold text-gray-900">Demo Instructor</h1>
@@ -75,9 +75,9 @@ export default async function DashboardPage() {
         </button>
       </div>
 
-      <div className="flex flex-1 gap-5 px-8 pb-8 overflow-hidden">
-        <div className="flex-1 min-w-0">
-          <div className="grid grid-cols-3 gap-4">
+      <div className="flex flex-1 flex-col gap-5 px-4 pb-8 overflow-y-auto sm:px-6 lg:px-8 xl:flex-row xl:overflow-hidden">
+        <div className="flex-1 min-w-0 xl:overflow-y-auto">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {statEntries.map((card) => (
               <div key={card.badge} className="rounded-2xl p-5" style={{ backgroundColor: card.cardBg }}>
                 <div className="flex items-start justify-between mb-8">
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 shrink-0" style={{ width: "360px" }}>
+        <div className="flex w-full flex-col gap-4 shrink-0 xl:w-90">
           <div className="bg-white rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-gray-800">

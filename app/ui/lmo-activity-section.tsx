@@ -33,7 +33,7 @@ export default function LmoActivitySection({
         <a href="#" className="text-xs font-medium" style={{ color: "#16a34a" }}>View all &rsaquo;</a>
       </div>
 
-      <div className="flex items-center gap-2 px-5 pb-3">
+      <div className="flex flex-wrap items-center gap-2 px-5 pb-3">
         {periods.map((p) => (
           <button
             key={p}
@@ -55,7 +55,8 @@ export default function LmoActivitySection({
           <p className="text-sm text-gray-400">No borrowing activity</p>
         </div>
       ) : (
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-120">
           <thead>
             <tr className="border-t border-gray-100">
               <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-400 tracking-wider">BORROWER</th>
@@ -93,6 +94,7 @@ export default function LmoActivitySection({
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

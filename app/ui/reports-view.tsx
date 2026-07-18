@@ -84,12 +84,12 @@ export default function ReportsView({
   return (
     <div>
       <div className="bg-white rounded-2xl overflow-hidden mb-5">
-        <div className="flex border-b border-gray-100">
+        <div className="flex overflow-x-auto border-b border-gray-100">
           {(["daily", "weekly", "monthly", "semester", "yearly"] as Period[]).map((p, i) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className="flex-1 py-3 text-sm font-medium transition-colors"
+              className="flex-1 py-3 px-3 text-sm font-medium transition-colors whitespace-nowrap"
               style={{
                 color: period === p ? "#111827" : "#9ca3af",
                 borderBottom: period === p ? "2px solid #111827" : "2px solid transparent",
@@ -112,7 +112,7 @@ export default function ReportsView({
           )}
 
           <div
-            className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-4"
+            className="flex flex-wrap items-center justify-between gap-1 px-4 py-2.5 rounded-xl mb-4"
             style={{ backgroundColor: "#eff6ff", borderLeft: "3px solid #3b82f6" }}
           >
             <p className="text-sm font-semibold text-gray-800">{periodLabel}</p>
@@ -121,7 +121,7 @@ export default function ReportsView({
             </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-4 lg:grid-cols-4">
             <div className="rounded-xl px-4 py-3" style={{ backgroundColor: "#eff6ff" }}>
               <div className="flex items-center gap-2 mb-1" style={{ color: "#3b82f6" }}>
                 <ClipboardIcon />
@@ -155,7 +155,7 @@ export default function ReportsView({
       </div>
 
       <div className="bg-white rounded-2xl overflow-hidden mb-4">
-        <div className="flex border-b border-gray-100">
+        <div className="flex overflow-x-auto border-b border-gray-100">
           {([
             { key: "borrowings" as ContentTab, label: `Borrowings (${summary.borrowings})`, icon: <ClipboardIcon /> },
             { key: "breakages" as ContentTab, label: `Breakages (${summary.breakages})`, icon: <TriangleIcon /> },
@@ -164,7 +164,7 @@ export default function ReportsView({
             <button
               key={t.key}
               onClick={() => setContentTab(t.key)}
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-3 text-sm font-medium transition-colors whitespace-nowrap"
               style={{
                 color: contentTab === t.key ? "#111827" : "#9ca3af",
                 borderBottom: contentTab === t.key ? "2px solid #111827" : "2px solid transparent",
@@ -186,7 +186,7 @@ export default function ReportsView({
           <div className="flex flex-col gap-3">
             {records.map((r) => (
               <div key={r.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100">
-                <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-gray-50 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-xs text-gray-400 mb-0.5">Control Number</p>
                     <p className="text-base font-bold" style={{ color: "#16a34a" }}>#{r.controlNo}</p>
@@ -203,7 +203,7 @@ export default function ReportsView({
                 </div>
 
                 <div className="px-5 py-4">
-                  <div className="grid grid-cols-4 gap-4 mb-3">
+                  <div className="grid grid-cols-2 gap-4 mb-3 lg:grid-cols-4">
                     <div>
                       <p className="text-xs text-gray-400 mb-0.5">Student</p>
                       <p className="text-sm font-semibold text-gray-800">{r.student}</p>
@@ -221,7 +221,7 @@ export default function ReportsView({
                       <p className="text-sm font-semibold text-gray-800">{r.date}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-2 gap-4 mb-4 lg:grid-cols-3">
                     <div>
                       <p className="text-xs text-gray-400 mb-0.5">Course</p>
                       <p className="text-sm font-semibold text-gray-800">{r.course || "—"}</p>
@@ -236,7 +236,8 @@ export default function ReportsView({
                     </div>
                   </div>
 
-                  <table className="w-full text-sm border border-gray-100 rounded-xl overflow-hidden">
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                  <table className="w-full min-w-105 text-sm">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">ITEM</th>
@@ -256,6 +257,7 @@ export default function ReportsView({
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
             ))}

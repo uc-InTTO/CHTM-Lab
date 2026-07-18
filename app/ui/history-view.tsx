@@ -120,7 +120,7 @@ export default function HistoryView({
         />
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         {TIME_PERIODS.map((t) => (
           <button
             key={t.key}
@@ -137,12 +137,12 @@ export default function HistoryView({
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl overflow-hidden mb-4 flex">
+      <div className="bg-white rounded-2xl overflow-x-auto mb-4 flex">
         {typeTabs.map((t, i) => (
           <button
             key={t.key}
             onClick={() => setTypeTab(t.key)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-3 px-3 text-sm font-medium transition-colors whitespace-nowrap"
             style={{
               color: typeTab === t.key ? "#111827" : "#9ca3af",
               borderBottom: typeTab === t.key ? "2px solid #111827" : "2px solid transparent",
@@ -163,7 +163,7 @@ export default function HistoryView({
           <div className="flex flex-col gap-2">
             {filteredBorrowings.map((b) => (
               <div key={b.id} className="bg-white rounded-2xl px-5 py-4">
-                <div className="flex items-start gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <div
                     className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                     style={{ backgroundColor: "#dcfce7", color: "#15803d" }}

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore/lite";
+import { auth, db } from "../lib/firebase";
 
 function BoxIcon() {
   return (
@@ -35,17 +38,84 @@ function EyeOffIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<"signIn" | "register">("signIn");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSignIn() {
-    router.push("/dashboard");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage("");
+
+    if (!email.trim() || !password) {
+      setErrorMessage("Please enter your email and password.");
+      return;
+    }
+
+    if (mode === "register" && password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "register") {
+        const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, "users", user.uid), {
+          email: user.email,
+          role: "student",
+          createdAt: new Date().toISOString()
+        });
+
+        router.push("/student");
+
+      } else {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const userRole = userData.role;
+
+          switch (userRole) {
+            case "admin":
+            case "lmo":
+              router.push("/lmo");
+              break;
+            case "faculty":
+              router.push("/dashboard");
+              break;
+            case "student_assistant":
+              router.push("/lmo");
+              break;
+            case "student":
+            default:
+              router.push("/student");
+              break;
+          }
+        } else {
+          router.push("/student");
+        }
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4"
+      className="min-h-dvh flex flex-col items-center justify-center px-4 py-10"
       style={{ backgroundColor: "#1e3320" }}
     >
       <div className="flex flex-col items-center mb-6 gap-2">
@@ -61,8 +131,47 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-        <h2 className="text-lg font-bold text-gray-900 mb-5">Sign In</h2>
+      <form className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-2 gap-2 mb-5 rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("signIn");
+              setErrorMessage("");
+            }}
+            className="rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: mode === "signIn" ? "#2e7d32" : "transparent",
+              color: mode === "signIn" ? "#ffffff" : "#4b5563",
+            }}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("register");
+              setErrorMessage("");
+            }}
+            className="rounded-lg px-3 py-2 text-sm font-semibold transition-colors"
+            style={{
+              backgroundColor: mode === "register" ? "#2e7d32" : "transparent",
+              color: mode === "register" ? "#ffffff" : "#4b5563",
+            }}
+          >
+            Registration
+          </button>
+        </div>
+
+        <h2 className="text-lg font-bold text-gray-900 mb-5">
+          {mode === "signIn" ? "Sign In" : "Student Registration"}
+        </h2>
+
+        {mode === "register" ? (
+          <p className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Registration is for students only. LMO staff and instructors will use their assigned email and password.
+          </p>
+        ) : null}
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -99,59 +208,36 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {mode === "register" ? (
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-sm bg-gray-100 text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-600"
+            />
+          </div>
+        ) : null}
+
+        {errorMessage ? (
+          <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+            {errorMessage}
+          </p>
+        ) : null}
+
         <button
-          type="button"
-          onClick={handleSignIn}
+          type="submit"
+          disabled={isSubmitting}
           className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#2e7d32" }}
         >
-          Sign In
+          {isSubmitting ? "Please wait..." : mode === "signIn" ? "Sign In" : "Create Account"}
         </button>
-
-        <div className="mt-6">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => router.push("/lmo")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#f5f0ff" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#7c3aed" }}>
-                LMO Custodian
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#9d71f5" }}>
-                Full access — inventory, reports, all logs
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#eff6ff" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#2563eb" }}>
-                Instructor
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#5b93f5" }}>
-                Dashboard, borrow, logs, waste, breakages
-              </p>
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/student")}
-              className="p-3 rounded-xl text-left transition-opacity hover:opacity-80"
-              style={{ backgroundColor: "#fefce8" }}
-            >
-              <p className="font-semibold text-sm" style={{ color: "#b45309" }}>
-                Student
-              </p>
-              <p className="text-xs mt-1" style={{ color: "#d97706" }}>
-                Announcements, borrow view, breakages, history
-              </p>
-            </button>
-          </div>
-        </div>
-      </div>
+      </form>
     </div>
   );
 }

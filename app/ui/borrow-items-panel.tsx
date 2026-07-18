@@ -19,7 +19,7 @@ export default function BorrowItemsPanel({
   items: BorrowItem[];
 }) {
   return (
-    <div className="bg-white rounded-2xl overflow-hidden" style={{ width: "340px" }}>
+    <div className="bg-white rounded-2xl overflow-hidden w-full max-w-85">
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <h2 className="text-sm font-bold text-gray-900">Items ({items.length})</h2>
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">

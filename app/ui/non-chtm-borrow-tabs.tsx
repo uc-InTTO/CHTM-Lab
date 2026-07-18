@@ -32,12 +32,12 @@ export default function NonChtmBorrowTabs({
 
   return (
     <div>
-      <div className="bg-white rounded-2xl overflow-hidden mb-4 flex">
+      <div className="bg-white rounded-2xl overflow-x-auto mb-4 flex">
         {tabs.map((t, i) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="flex-1 py-3 text-sm font-medium transition-colors"
+            className="flex-1 py-3 px-3 text-sm font-medium transition-colors whitespace-nowrap"
             style={{
               color: tab === t.key ? "#111827" : "#9ca3af",
               borderBottom: tab === t.key ? "2px solid #111827" : "2px solid transparent",
@@ -62,7 +62,7 @@ export default function NonChtmBorrowTabs({
         <div className="flex flex-col gap-3">
           {visible.map((b) => (
             <div key={b.id} className="bg-white rounded-2xl px-5 py-4">
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                 <p className="text-sm font-bold" style={{ color: "#16a34a" }}>#{b.controlNo}</p>
                 <div className="flex items-center gap-2">
                   <span
@@ -81,7 +81,7 @@ export default function NonChtmBorrowTabs({
                 {b.student} · {b.college}
               </p>
 
-              <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 mb-4 lg:grid-cols-4">
                 <div>
                   <p className="text-xs text-gray-400 mb-0.5">Borrow Date</p>
                   <p className="text-sm font-medium text-gray-800">{b.borrowDate}</p>

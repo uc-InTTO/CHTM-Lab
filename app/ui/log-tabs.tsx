@@ -14,7 +14,7 @@ export default function LogTabs({ logs }: { logs: InstructorLog[] }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => setTab("Active")}
           className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors"
@@ -70,7 +70,7 @@ export default function LogTabs({ logs }: { logs: InstructorLog[] }) {
         ) : (
           <div className="divide-y divide-gray-100">
             {visible.map((log) => (
-              <div key={log.id} className="px-5 py-4 flex items-center justify-between">
+              <div key={log.id} className="px-5 py-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{log.subject}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{log.room} · {log.date}</p>

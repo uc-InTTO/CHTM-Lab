@@ -25,7 +25,7 @@ export default function StudentBorrowRequestsPanel({ requests }: { requests: Stu
 
   return (
     <div className="bg-white rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
@@ -42,7 +42,7 @@ export default function StudentBorrowRequestsPanel({ requests }: { requests: Stu
         <a href="#" className="text-xs text-gray-400 hover:text-gray-600">View all &rsaquo;</a>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {(["Pending", "Approved", "Received"] as Tab[]).map((t) => {
           const isActive = tab === t;
           const c = tabColors[t];

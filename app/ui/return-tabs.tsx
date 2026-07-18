@@ -25,7 +25,7 @@ export default function ReturnTabs({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
         <button
           onClick={() => { setTab("chtm"); setSelected(null); }}
           className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors"
@@ -71,7 +71,7 @@ export default function ReturnTabs({
         </button>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row">
         <div className="bg-white rounded-2xl overflow-hidden flex-1">
           <div className="px-5 py-4 border-b border-gray-100">
             <p className="text-sm font-semibold text-gray-900">{panelTitle}</p>
@@ -104,7 +104,7 @@ export default function ReturnTabs({
           )}
         </div>
 
-        <div className="flex-1 flex items-center justify-center bg-white rounded-2xl">
+        <div className="flex-1 flex items-center justify-center bg-white rounded-2xl min-h-32 p-4">
           {selected ? (
             <div className="w-full px-6 py-6">
               <p className="text-sm font-bold text-gray-900 mb-1">{selected.studentName}</p>

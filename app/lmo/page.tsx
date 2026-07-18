@@ -46,7 +46,7 @@ export default async function LmoDashboardPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-start justify-between px-8 pt-8 pb-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-6 pb-4 sm:px-6 lg:px-8 lg:pt-8 lg:pb-5">
         <div>
           <p className="text-sm text-gray-500">Welcome to</p>
           <h1 className="text-2xl font-bold text-gray-900">LMO Dashboard</h1>
@@ -60,7 +60,7 @@ export default async function LmoDashboardPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 px-8 pb-5">
+      <div className="grid grid-cols-1 gap-3 px-4 pb-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8 xl:grid-cols-5">
         {statConfig.map((cfg) => (
           <div key={cfg.key} className="rounded-2xl p-4" style={{ backgroundColor: cfg.cardBg }}>
             <div className="flex items-start justify-between mb-5">
@@ -76,13 +76,13 @@ export default async function LmoDashboardPage() {
         ))}
       </div>
 
-      <div className="flex flex-1 gap-4 px-8 pb-8 overflow-hidden">
-        <div className="flex-1 min-w-0 flex flex-col gap-4 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-4 px-4 pb-8 overflow-y-auto sm:px-6 lg:px-8 xl:flex-row xl:overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col gap-4 xl:overflow-y-auto">
           <LmoActivitySection activity={activity} />
           <LmoBreakagesSection breakages={breakages} />
         </div>
 
-        <div className="flex flex-col gap-4 shrink-0" style={{ width: "340px" }}>
+        <div className="flex w-full flex-col gap-4 shrink-0 xl:w-85">
           <div className="rounded-2xl p-5" style={{ backgroundColor: "#1a1f1a" }}>
             <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2" style={{ backgroundColor: "#3b82f6", color: "#fff" }}>
               Active
