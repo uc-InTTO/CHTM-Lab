@@ -34,8 +34,8 @@ export default async function InstructorLogPage() {
   ]);
 
   return (
-    <div className="flex flex-col h-full px-8 py-8">
-      <div className="flex items-start justify-between mb-6">
+    <div className="flex flex-col h-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Instructor Log</h1>
           <p className="text-sm text-gray-500 mt-0.5">Track instructor lab sessions</p>
@@ -52,7 +52,7 @@ export default async function InstructorLogPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2">
         <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#e0e7ff" }}>
             <ClockIcon />

@@ -28,7 +28,7 @@ export default function LmoMyListTabs({ items }: { items: LmoMyListItem[] }) {
 
   return (
     <div>
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {tabs.map((t) => (
           <button
             key={t.key}

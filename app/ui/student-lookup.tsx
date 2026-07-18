@@ -25,7 +25,7 @@ export default function StudentLookup() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl px-8 py-10">
+      <div className="bg-white rounded-2xl px-5 py-8 sm:px-8 sm:py-10">
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center mb-3"

@@ -35,7 +35,7 @@ export default function MyListTabs({ records }: { records: MyListRecord[] }) {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         {(["Active", "Returned", "Requests"] as Tab[]).map((t) => {
           const isActive = tab === t;
           const c = tabConfig[t];

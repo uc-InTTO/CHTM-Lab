@@ -23,8 +23,8 @@ export default async function AnnouncementsPage() {
   const announcements = await getAllAnnouncements();
 
   return (
-    <div className="flex flex-col h-full px-8 py-8">
-      <div className="flex items-start justify-between mb-6">
+    <div className="flex flex-col h-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage and publish announcements</p>
@@ -49,8 +49,8 @@ export default async function AnnouncementsPage() {
         <div className="flex flex-col gap-3">
           {announcements.map((a) => (
             <div key={a.id} className="bg-white rounded-2xl p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h2 className="text-base font-bold text-gray-900">{a.title}</h2>
                   <span
                     className="px-2.5 py-0.5 rounded-full text-xs font-medium"

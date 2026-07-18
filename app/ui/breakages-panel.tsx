@@ -72,7 +72,7 @@ export default function BreakagesPanel({
 
   return (
     <div>
-      <div className="grid grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-2 gap-3 mb-5 sm:gap-4 lg:grid-cols-4">
         {[
           { label: "Pending", value: stats.pending, color: "#f97316" },
           { label: "Assessed", value: stats.assessed, color: "#111827" },
@@ -103,7 +103,7 @@ export default function BreakagesPanel({
         ))}
       </div>
 
-      <div className="flex gap-1 mb-5">
+      <div className="flex flex-wrap gap-1 mb-5">
         {(["report", "unreturned", "all"] as SubTab[]).map((t) => (
           <button
             key={t}
@@ -129,14 +129,14 @@ export default function BreakagesPanel({
       </div>
 
       {subTab === "report" ? (
-        <div className="flex gap-5">
-          <div className="flex-1 bg-white rounded-2xl px-6 py-5">
+        <div className="flex flex-col gap-5 lg:flex-row">
+          <div className="flex-1 bg-white rounded-2xl px-4 py-5 sm:px-6">
             <div className="flex items-center gap-2 mb-5">
               <span style={{ color: "#f59e0b" }}><WarningIcon /></span>
               <p className="text-sm font-bold text-gray-900">Report Breakage / Damage</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Control No. (Optional)</label>
                 <input
@@ -152,7 +152,7 @@ export default function BreakagesPanel({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Student Name</label>
                 <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
@@ -168,7 +168,7 @@ export default function BreakagesPanel({
               <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Damage Type</label>
                 <select
@@ -204,7 +204,7 @@ export default function BreakagesPanel({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Amount (₱)</label>
                 <input
@@ -235,7 +235,7 @@ export default function BreakagesPanel({
             </button>
           </div>
 
-          <div className="w-72 shrink-0">
+          <div className="w-full shrink-0 lg:w-72">
             <p className="text-sm font-semibold text-gray-900 mb-3">Recent Reports</p>
             {reports.length === 0 ? (
               <div className="bg-white rounded-2xl flex items-center justify-center py-14">
@@ -278,7 +278,7 @@ export default function BreakagesPanel({
           ) : (
             <div className="divide-y divide-gray-100">
               {visible.map((r) => (
-                <div key={r.id} className="px-5 py-4 flex items-center justify-between">
+                <div key={r.id} className="px-4 py-4 flex flex-wrap items-center justify-between gap-2 sm:px-5">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">{r.itemName} × {r.qty}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{r.student} · {r.studentId}</p>

@@ -39,6 +39,7 @@ function EyeOffIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signIn" | "register">("signIn");
+
   const [loginRole, setLoginRole] = useState<"student" | "instructor" | "lmo">("student"); 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -116,7 +117,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-4"
+      className="min-h-dvh flex flex-col items-center justify-center px-4 py-10"
       style={{ backgroundColor: "#1e3320" }}
     >
       <div className="flex flex-col items-center mb-6 gap-2">

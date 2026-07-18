@@ -102,8 +102,7 @@ function AddEquipmentModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
       <div
-        className="bg-white rounded-2xl w-full mx-4 flex flex-col"
-        style={{ maxWidth: "860px", maxHeight: "90vh" }}
+        className="bg-white rounded-2xl w-full mx-4 flex flex-col max-w-215 max-h-[90dvh]"
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
@@ -118,19 +117,18 @@ function AddEquipmentModal({
           </button>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Category sidebar */}
-          <div className="w-40 border-r border-gray-100 overflow-y-auto py-3 shrink-0">
-            <p className="text-xs font-semibold text-gray-400 px-4 mb-2 tracking-wider">CATEGORY</p>
+        <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+          {/* Category sidebar (horizontal chip bar on mobile) */}
+          <div className="flex gap-1 overflow-x-auto border-b border-gray-100 px-2 py-2 shrink-0 sm:block sm:w-40 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:px-0 sm:py-3">
+            <p className="hidden sm:block text-xs font-semibold text-gray-400 px-4 mb-2 tracking-wider">CATEGORY</p>
             {categoryNames.map((name) => (
               <button
                 key={name}
                 onClick={() => setSelectedCategory(name)}
-                className="w-full text-left px-4 py-2 text-sm transition-colors rounded-xl mx-1"
+                className="whitespace-nowrap text-left px-4 py-2 text-sm transition-colors rounded-xl shrink-0 sm:mx-1 sm:w-[calc(100%-8px)]"
                 style={{
                   backgroundColor: selectedCategory === name ? "#16a34a" : "transparent",
                   color: selectedCategory === name ? "white" : "#374151",
-                  width: "calc(100% - 8px)",
                 }}
               >
                 {name}
@@ -238,7 +236,7 @@ function AddEquipmentModal({
           </div>
 
           {/* Info panel */}
-          <div className="w-44 border-l border-gray-100 p-4 flex flex-col shrink-0">
+          <div className="hidden md:flex w-44 border-l border-gray-100 p-4 flex-col shrink-0">
             <p className="text-sm font-semibold text-gray-700 mb-3">Info</p>
             {activeItem ? (
               <div>
@@ -257,7 +255,10 @@ function AddEquipmentModal({
           </div>
         </div>
 
-        <div className="flex justify-end px-6 py-4 border-t border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 md:justify-end">
+          <p className="text-xs text-gray-400 md:hidden">
+            Total: <span className="font-semibold text-gray-700">{totalInCart} pcs</span>
+          </p>
           <button
             onClick={handleDone}
             className="px-6 py-2 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
@@ -282,13 +283,13 @@ export default function StudentBorrowView({
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="flex flex-col h-full px-8 py-8">
-      <div className="flex items-start justify-between mb-6">
+    <div className="flex flex-col h-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Borrow Equipment</h1>
           <p className="text-sm text-gray-500 mt-0.5">Issue equipment to students</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
             style={{ backgroundColor: "#16a34a" }}

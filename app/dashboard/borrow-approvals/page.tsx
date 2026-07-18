@@ -13,7 +13,7 @@ export default async function BorrowApprovalsPage() {
   const pending = await getPendingApprovals();
 
   return (
-    <div className="flex flex-col h-full px-8 py-8">
+    <div className="flex flex-col h-full px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Borrow Approvals</h1>
         <p className="text-sm text-gray-500 mt-0.5">
@@ -39,7 +39,7 @@ export default async function BorrowApprovalsPage() {
         ) : (
           <div className="divide-y divide-gray-100">
             {pending.map((approval) => (
-              <div key={approval.id} className="px-5 py-4 flex items-center justify-between">
+              <div key={approval.id} className="px-5 py-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">#{approval.controlNo}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
