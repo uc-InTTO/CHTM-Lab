@@ -27,6 +27,56 @@ function BookIcon() {
   );
 }
 
+// popup modal when instructor log session is created
+function InstructorLogModal() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="bg-white rounded-2xl p-6 max-w-lg w-full h-150">
+        <p className="text-lg font-bold text-gray-900 mb-4">Instructor Log Entry</p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-gray-500 text-sm">Instructor Name (SURNAME, FIRST NAME)</p>
+          <input className="border border-gray-500/40 rounded-xl p-1"></input>
+
+          <div className="flex flex-row justify-between w-full">
+            <div>
+              <p className="text-gray-500 text-sm">Section</p>
+              <input className="border border-gray-500/40 rounded-xl p-1 "></input>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">Course / Subject</p>
+              <input className="border border-gray-500/40 rounded-xl p-1 "></input>
+            </div>
+          </div>
+
+          <p className="text-gray-500 text-sm">Schedule</p>
+          <input className="border border-gray-500/40 rounded-xl p-1"></input>
+          
+            <div className="flex flex-row justify-between gap-3">
+            <div>
+              <p className="text-gray-500 text-sm">Date</p>
+              <input className="border border-gray-500/40 rounded-xl p-1 w-full"></input>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">Time In</p>
+              <input className="border border-gray-500/40 rounded-xl p-1 w-full"></input>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">Time Out</p>
+              <input className="border border-gray-500/40 rounded-xl p-1 w-full "></input>
+            </div>
+          </div>
+
+        </div>
+        <div className="flex flex-row w-full justify-between mt-5 gap-2">
+          <button className="border rounded-2xl border-gray-500/40 p-1.5 w-full hover:bg-gray-200/60">Cancel</button>  
+          <button className="border text-white bg-emerald-700 rounded-2xl border-gray-500/40 p-1 w-full hover:bg-green-700/80"> Save Log</button> 
+
+        </div>
+      </div>
+  </div>
+  );
+}
+
 export default async function InstructorLogPage() {
   const [stats, logs] = await Promise.all([
     getInstructorLogStats(),
@@ -41,6 +91,7 @@ export default async function InstructorLogPage() {
           <p className="text-sm text-gray-500 mt-0.5">Track instructor lab sessions</p>
         </div>
         <button
+          
           className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{ backgroundColor: "#2e7d32" }}
         >
