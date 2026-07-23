@@ -174,12 +174,12 @@ export type BorrowActivity = {
 };
 
 export type BreakageItem = {
-  id: number;
+  id: string | number;
   item: string;
   quantity: number;
   student: string;
   date: string;
-  status: "unreturned" | "resolved";
+  status: string;
   period: "daily" | "weekly" | "monthly" | "semester";
 };
 
@@ -424,13 +424,23 @@ function looksLikeCategory(text: string) {
   return CATEGORY_HINTS.some((hint) => lower.includes(hint));
 }
 
-async function loadInventoryImportRows(): Promise<InventoryImportDoc[]> {
+async function loadInventoryImportRows(floor?: string): Promise<InventoryImportDoc[]> {
   try {
     const db = getAdminFirestore();
-    const snapshot = await db.collection(INVENTORY_COLLECTION).orderBy("rowIndex", "asc").get();
+    
+    let query: FirebaseFirestore.Query = db.collection(INVENTORY_COLLECTION);
+
+    // selected floor
+    if (floor && floor !== "All") {
+      const formattedSourceName = floor.toLowerCase().replace(" ", "") + ".json";
+      query = query.where("floor", "==", floor);
+    }
+
+    const snapshot = await query.orderBy("rowIndex", "asc").get();
 
     return snapshot.docs.map((document) => document.data() as InventoryImportDoc);
-  } catch {
+  } catch (error) {
+    console.error("Error fetching inventory rows:", error);
     return [];
   }
 }
@@ -492,8 +502,8 @@ function buildInventoryCategories(rows: InventoryImportDoc[]): InventoryCategory
     .filter((category) => category.items.length > 0);
 }
 
-export async function getInventoryStats(): Promise<InventoryStats> {
-  const categories = await getInventoryCategories();
+export async function getInventoryStats(floor?: string): Promise<InventoryStats> {
+  const categories = await getInventoryCategories(floor);
 
   return {
     equipmentTypes: categories.reduce((sum, category) => sum + category.items.length, 0),
@@ -503,8 +513,8 @@ export async function getInventoryStats(): Promise<InventoryStats> {
   };
 }
 
-export async function getInventoryCategories(): Promise<InventoryCategory[]> {
-  const rows = await loadInventoryImportRows();
+export async function getInventoryCategories(floor?: string): Promise<InventoryCategory[]> {
+  const rows = await loadInventoryImportRows(floor); 
   return buildInventoryCategories(rows);
 }
 

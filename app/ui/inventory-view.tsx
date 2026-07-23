@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { InventoryCategory, InventoryItem } from "../lib/data";
 
 type ViewTab = "all" | "available" | "sets";
@@ -61,6 +61,9 @@ export default function InventoryView({ categories }: { categories: InventoryCat
   const [viewTab, setViewTab] = useState<ViewTab>("all");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [search, setSearch] = useState("");
+  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+
 
   const categoryOptions = ["All Categories", ...Array.from(new Set(categories.map((category) => category.name)))];
   const viewTabs: { key: ViewTab; label: string }[] = [

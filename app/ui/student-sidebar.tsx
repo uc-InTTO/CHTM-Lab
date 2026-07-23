@@ -160,7 +160,7 @@ export default function StudentSidebar() {
           style={{ color: "#7aa87e" }}
         >
           <LogoutIcon />
-          Exit Demo
+          Log Out
         </button>
         <p className="text-xs" style={{ color: "#3d5a40" }}>UC-CHTM Lab v1.0</p>
       </div>

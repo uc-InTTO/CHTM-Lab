@@ -1,5 +1,7 @@
 "use client";
 
+import { useTransition } from "react";
+import { submitBorrowSession } from "../lib/actions"; // Ensure this matches your file path
 import type { BorrowSession, BorrowItem } from "../lib/data";
 
 function SendIcon() {
@@ -18,6 +20,19 @@ export default function BorrowItemsPanel({
   session: BorrowSession;
   items: BorrowItem[];
 }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleSend = () => {
+    // startTransition wraps the server action to handle UI updates while waiting
+    startTransition(async () => {
+      const result = await submitBorrowSession(session.id);
+      
+      if (!result.success) {
+        alert("Failed to submit borrowing request. Please try again.");
+      }
+    });
+  };
+
   return (
     <div className="bg-white rounded-2xl overflow-hidden" style={{ width: "340px" }}>
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -55,11 +70,19 @@ export default function BorrowItemsPanel({
 
       <div className="px-4 pb-4">
         <button
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          onClick={handleSend}
+          disabled={isPending || items.length === 0}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "#7c83d4" }}
         >
-          <SendIcon />
-          Send
+          {isPending ? (
+            "Sending..."
+          ) : (
+            <>
+              <SendIcon />
+              Send
+            </>
+          )}
         </button>
       </div>
     </div>

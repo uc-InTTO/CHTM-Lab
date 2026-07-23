@@ -1,13 +1,14 @@
 import {
-  getLmoDashboardStats,
   getBorrowActivity,
-  getLmoBreakages,
   getActiveIssuedBorrowings,
   getRecentNotifications,
   getRecentAnnouncements,
 } from "../lib/data";
+import { getDashboardAnalytics } from "../lib/analytics";
 import LmoActivitySection from "../ui/lmo-activity-section";
 import LmoBreakagesSection from "../ui/lmo-breakages-section";
+
+export const revalidate = 60;
 
 function BellIcon({ size = 15 }: { size?: number }) {
   return (
@@ -35,14 +36,15 @@ const statConfig = [
 ];
 
 export default async function LmoDashboardPage() {
-  const [stats, activity, breakages, issuedBorrowings, notifications, announcements] = await Promise.all([
-    getLmoDashboardStats(),
+  const [analytics, activity, issuedBorrowings, notifications, announcements] = await Promise.all([
+    getDashboardAnalytics(),
     getBorrowActivity(),
-    getLmoBreakages(),
     getActiveIssuedBorrowings(),
     getRecentNotifications(),
     getRecentAnnouncements(),
   ]);
+
+  const { stats, pendingBreakagesList: breakages } = analytics;
 
   return (
     <div className="flex flex-col h-full">
@@ -95,7 +97,7 @@ export default async function LmoDashboardPage() {
               <p className="text-xs mb-4" style={{ color: "#4b5563" }}>No active borrowings</p>
             ) : (
               <div className="flex flex-col gap-2 mb-4">
-                {issuedBorrowings.map((b) => (
+                {issuedBorrowings.map((b: { id: string | number; studentName: string; station: string; itemCount: number }) => (
                   <div key={b.id} className="rounded-xl px-3 py-2.5" style={{ backgroundColor: "#2a2f2a" }}>
                     <p className="text-sm font-semibold text-white">{b.studentName}</p>
                     <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{b.station} · {b.itemCount} Item(s)</p>
@@ -123,7 +125,7 @@ export default async function LmoDashboardPage() {
               <p className="text-xs text-gray-400">No notifications</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {notifications.map((n) => (
+                {notifications.map((n: { id: string | number; sender: string; time: string }) => (
                   <div key={n.id} className="flex items-start gap-2">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "#f3f4f6" }}>
                       <BellIcon size={12} />
@@ -150,7 +152,7 @@ export default async function LmoDashboardPage() {
               <p className="text-xs text-gray-400">No announcements</p>
             ) : (
               <div className="flex flex-col gap-2">
-                {announcements.map((a) => (
+                {announcements.map((a: { id: string | number; title: string; body: string; time: string }) => (
                   <div key={a.id}>
                     <p className="text-xs font-medium text-gray-800">{a.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{a.body}</p>
