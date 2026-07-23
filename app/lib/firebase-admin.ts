@@ -1,5 +1,6 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 
 let cachedDb: ReturnType<typeof getFirestore> | null = null;
 

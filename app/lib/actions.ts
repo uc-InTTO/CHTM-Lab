@@ -1,8 +1,13 @@
 "use server";
 
 import { getAdminFirestore } from "./firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 import { revalidatePath } from "next/cache";
-import { getInventoryStats, getInventoryCategories } from "./data";
+import { getInventoryStats, getInventoryCategories, BorrowItem, BorrowSession, BorrowSessionDetails} from "./data";
+import { db } from "./firebase";
+
+const BORROW_SESSIONS_COLLECTION = "borrowSessions";
+const BORROW_ITEMS_COLLECTION = "borrowItems"; 
 
 export async function createNewBorrowSession() {
   const db = getAdminFirestore();
@@ -32,18 +37,61 @@ export async function submitBorrowSession(sessionId: number) {
     return { success: false, message: "Could not submit log." };
   }
 }
-// export async function fetchFloorData(floor: string) {
-//   // Fetch both the stats and categories for the floor
-//   const [stats, categories] = await Promise.all([
-//     getInventoryStats(floor),
-//     getInventoryCategories(floor),
-//   ]);
 
-//   return { stats, categories };
-// }
+
+export async function createBorrowDraft(details: any) {
+  const db = getAdminFirestore();
+  const controlNo = await nextControlNo();
+  const documentPayload = {
+    controlNo,
+    status: "Draft",
+    studentName: details.studentName || "",
+    floor: details.floor || "",
+    date: details.date || "",
+    idNumber: details.idNumber || "",
+    section: details.section || "",
+    courseSubject: details.courseSubject || "",
+    timeIn: details.timeIn || "",
+    timeOut: details.timeOut || "",
+    activityTitle: details.activityTitle || "",
+    instructor: details.instructor || "",
+    custodianIssued: details.custodianIssued || "",
+    createdAt: FieldValue.serverTimestamp
+  };
+
+  
+  const ref = await db.collection(BORROW_SESSIONS_COLLECTION).add(documentPayload);
+
+  revalidatePath("/borrow");
+  return { 
+    id: ref.id, 
+    ...documentPayload,
+    createdAt: new Date().toISOString() // 
+  };
+}
+
+
+
+export async function addBorrowItem(sessionId: string, name: string, quantity: number): Promise<BorrowItem> {
+  const db = getAdminFirestore();
+
+  const sessionDoc = await db.collection(BORROW_SESSIONS_COLLECTION).doc(sessionId).get();
+  if (!sessionDoc.exists) {
+    throw new Error("Borrow session not found");
+  }
+
+  const ref = await db.collection(BORROW_ITEMS_COLLECTION).add({
+    sessionId,
+    name,
+    quantity,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  revalidatePath("/borrow");
+  return { id: ref.id, sessionId, name, quantity };
+}
 
 // MOCK DATA
-
 export async function fetchFloorData(floor: string) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -85,3 +133,25 @@ export async function fetchFloorData(floor: string) {
 
   return { stats: mockStats, categories: mockCategories };
 }
+
+//helper function
+
+
+async function nextControlNo(): Promise<string> {
+  const db = getAdminFirestore();
+  
+  try {
+    // Attempt standard database counting aggregation
+    const snapshot = await db.collection("borrowSessions").count().get();
+    const currentCount = snapshot.data().count;
+    const nextNum = 16500 + currentCount + 1;
+    return `CTRL-${nextNum}`;
+  } catch (error: any) {
+    console.warn("Firebase collection quota hit. Using fallback identifier sequence.", error.message);
+
+    const backupNum = Math.floor(1000 + Math.random() * 9000);
+    return `CTRL-TEMP-${backupNum}`;
+  }
+}
+
+

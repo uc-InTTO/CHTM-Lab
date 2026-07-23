@@ -1,90 +1,104 @@
+// app/ui/lmo-borrow-items-panel.tsx
 "use client";
 
-import { useTransition } from "react";
-import { submitBorrowSession } from "../lib/actions"; // Ensure this matches your file path
-import type { BorrowSession, BorrowItem } from "../lib/data";
-
-function SendIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m22 2-7 20-4-9-9-4Z" />
-      <path d="M22 2 11 13" />
-    </svg>
-  );
+import React, { useState, useEffect, useTransition } from "react";
+import { addBorrowItem, fetchFloorData } from "../lib/actions";
+import { BorrowItem } from "../lib/data";
+import AddEquipmentModal from "./add-equipment-modal"; 
+interface LmoBorrowItemsPanelProps {
+  session: { id: string; floor: string };
+  items: BorrowItem[];
 }
 
-export default function BorrowItemsPanel({
-  session,
-  items,
-}: {
-  session: BorrowSession;
-  items: BorrowItem[];
-}) {
+export default function LmoBorrowItemsPanel({ session, items }: LmoBorrowItemsPanelProps) {
   const [isPending, startTransition] = useTransition();
+  const [availableInventory, setAvailableInventory] = useState<any[]>([]);
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false); // ✅ Manage state indicator
 
-  const handleSend = () => {
-    // startTransition wraps the server action to handle UI updates while waiting
+  // Fetch available catalogue metrics tied onto active session floor layers
+  useEffect(() => {
+    async function loadInventory() {
+      if (!session.floor) return;
+      try {
+        const data = await fetchFloorData(session.floor);
+        // Map elements out into plain arrays with categories assigned matching structural options
+        const itemsList = data.categories.flatMap((cat) => 
+          (cat.items || []).map(i => ({ ...i, category: cat.name.includes("Kitchen") ? "Cookware" : "All items" }))
+        );
+        setAvailableInventory(itemsList);
+      } catch (err) {
+        console.error("Failed to parse catalogue inventory parameters:", err);
+      }
+    }
+    loadInventory();
+  }, [session.floor]);
+
+  // Handle addition coming from the sub modal custom number pad trigger engine
+  const handleModalAddEquipmentItem = (itemName: string, qty: number) => {
     startTransition(async () => {
-      const result = await submitBorrowSession(session.id);
-      
-      if (!result.success) {
-        alert("Failed to submit borrowing request. Please try again.");
+      try {
+        await addBorrowItem(session.id, itemName, qty);
+      } catch (error) {
+        alert("Failed to append equipment row to current tracking list.");
       }
     });
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden" style={{ width: "340px" }}>
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <h2 className="text-sm font-bold text-gray-900">Items ({items.length})</h2>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" x2="12" y1="5" y2="19" />
-            <line x1="5" x2="19" y1="12" y2="12" />
-          </svg>
-          Add Equipment
-        </button>
-      </div>
-
-      <div className="px-4 pt-4 pb-2">
-        <div className="rounded-xl px-4 py-3" style={{ backgroundColor: "#f3f4f6" }}>
-          <p className="text-xs text-gray-400">Control No.</p>
-          <p className="text-sm font-semibold" style={{ color: "#16a34a" }}>{session.controlNo}</p>
+    <div className="w-full flex flex-col gap-4">
+      {/* Manifest Items Inventory Allocation Block List Context Header layout frame */}
+      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm w-full">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-900">Allocated Manifest Items</h3>
+          
+         
+          <button
+            type="button"
+            onClick={() => setIsEquipmentModalOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 hover:bg-emerald-100 transition-colors shadow-sm"
+          >
+            + Add Equipment
+          </button>
         </div>
-      </div>
 
-      <div className="px-4 py-6 min-h-24 flex items-center justify-center">
         {items.length === 0 ? (
-          <p className="text-sm text-gray-400">No items added</p>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400 border border-dashed border-gray-100 rounded-xl bg-gray-50/30">
+            <p className="text-xs">No items checked out under this draft log yet.</p>
+          </div>
         ) : (
-          <div className="w-full flex flex-col gap-2">
-            {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-800">{item.name}</span>
-                <span className="text-gray-500">×{item.quantity}</span>
-              </div>
-            ))}
+          <div className="border border-gray-100 rounded-xl overflow-hidden text-xs">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100 text-gray-500 font-semibold">
+                  <th className="p-3.5">Equipment Name</th>
+                  <th className="p-3.5 text-center w-32">Quantity</th>
+                  <th className="p-3.5 text-right w-24">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+                {items.map((allocatedItem) => (
+                  <tr key={allocatedItem.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="p-3.5 font-semibold text-gray-900">{allocatedItem.name}</td>
+                    <td className="p-3.5 text-center font-bold text-gray-600 bg-gray-50/20">{allocatedItem.quantity} pc/s</td>
+                    <td className="p-3.5 text-right">
+                      <button type="button" className="text-red-500 hover:text-red-700 font-bold text-[11px]">
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      <div className="px-4 pb-4">
-        <button
-          onClick={handleSend}
-          disabled={isPending || items.length === 0}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: "#7c83d4" }}
-        >
-          {isPending ? (
-            "Sending..."
-          ) : (
-            <>
-              <SendIcon />
-              Send
-            </>
-          )}
-        </button>
-      </div>
+      <AddEquipmentModal 
+        isOpen={isEquipmentModalOpen}
+        onClose={() => setIsEquipmentModalOpen(false)}
+        availableInventory={availableInventory}
+        onAddEquipment={handleModalAddEquipmentItem}
+      />
     </div>
   );
 }

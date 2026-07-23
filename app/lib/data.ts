@@ -1,4 +1,5 @@
 import { getAdminFirestore } from "./firebase-admin";
+import { FieldValue, type DocumentData } from "firebase-admin/firestore";
 
 export type StatCard = {
   badge: string;
@@ -112,24 +113,184 @@ export async function getActiveFloorLogs(): Promise<FloorLog[]> {
 }
 
 export type BorrowSession = {
-  id: number;
+  id: string;
   controlNo: string;
   status: "Draft" | "Sent" | "Approved" | "Returned";
+  studentName?: string;
+  floor?: string;
+  date?: string;
+  idNumber?: string;
+  section?: string;
+  course?: string;
+  timeIn?: string;
+  timeOut?: string;
+  activityTitle?: string;
+  instructor?: string;
+  custodianIssued?: string;
 };
 
+
+export type BorrowSessionDetails = Omit<BorrowSession, "id" | "controlNo" | "status">;
+
 export type BorrowItem = {
-  id: number;
-  sessionId: number;
+  id: string;
+  sessionId: string;
   name: string;
   quantity: number;
 };
 
-export async function getCurrentBorrowDraft(): Promise<BorrowSession | null> {
-  return null;
+// firestore collections for the borrow log
+const BORROW_SESSIONS_COLLECTION = "borrowSessions";
+const BORROW_ITEMS_COLLECTION = "borrowItems";
+const COUNTERS_COLLECTION = "counters";
+
+
+
+async function nextControlNo(): Promise<string> {
+  const db = getAdminFirestore();
+  const counterRef = db.collection(COUNTERS_COLLECTION).doc("borrowSession");
+
+  const seq = await db.runTransaction(async (tx) => {
+    const doc = await tx.get(counterRef);
+    const current = doc.exists ? ((doc.data()?.value as number) ?? 0) : 0;
+    const next = current + 1;
+    tx.set(counterRef, { value: next, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return next;
+  });
+
+  return `BRW-${new Date().getFullYear()}-${String(seq).padStart(5, "0")}`;
 }
 
-export async function getBorrowItems(sessionId: number): Promise<BorrowItem[]> {
-  return [];
+function toBorrowSession(id: string, data: DocumentData): BorrowSession {
+  return {
+    id,
+    controlNo: data.controlNo,
+    status: data.status,
+    studentName: data.studentName,
+    floor: data.floor,
+    date: data.date,
+    idNumber: data.idNumber,
+    section: data.section,
+    course: data.course,
+    timeIn: data.timeIn,
+    timeOut: data.timeOut,
+    activityTitle: data.activityTitle,
+    instructor: data.instructor,
+    custodianIssued: data.custodianIssued,
+  };
+}
+
+
+async function findDraftSession(): Promise<BorrowSession | null> {
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db
+      .collection(BORROW_SESSIONS_COLLECTION)
+      .where("status", "==", "Draft")
+      .orderBy("createdAt", "desc")
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const doc = snapshot.docs[0];
+    return toBorrowSession(doc.id, doc.data());
+  } catch {
+    return null;
+  }
+}
+
+export async function getCurrentBorrowDraft(): Promise<BorrowSession | null> {
+  return findDraftSession();
+}
+
+export async function getLmoCurrentIssueDraft(): Promise<BorrowSession | null> {
+  return findDraftSession();
+}
+
+export async function getBorrowItems(sessionId: string): Promise<BorrowItem[]> {
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db
+      .collection(BORROW_ITEMS_COLLECTION)
+      .where("sessionId", "==", sessionId)
+      .orderBy("createdAt", "asc")
+      .get();
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return { id: doc.id, sessionId: data.sessionId, name: data.name, quantity: data.quantity };
+    });
+  } catch {
+    return [];
+  }
+}
+
+
+export async function createBorrowDraft(details: BorrowSessionDetails = {}): Promise<BorrowSession> {
+  const db = getAdminFirestore();
+  const controlNo = await nextControlNo();
+
+
+  const cleanDetails = Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined && value !== "")
+  );
+
+  const ref = await db.collection(BORROW_SESSIONS_COLLECTION).add({
+    controlNo,
+    status: "Draft",
+    ...cleanDetails,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return { id: ref.id, controlNo, status: "Draft", ...cleanDetails };
+}
+
+
+export async function addBorrowItem(sessionId: string, name: string, quantity: number): Promise<BorrowItem> {
+  const db = getAdminFirestore();
+
+  const sessionDoc = await db.collection(BORROW_SESSIONS_COLLECTION).doc(sessionId).get();
+  if (!sessionDoc.exists) {
+    throw new Error("Borrow session not found");
+  }
+
+  const ref = await db.collection(BORROW_ITEMS_COLLECTION).add({
+    sessionId,
+    name,
+    quantity,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+
+  return { id: ref.id, sessionId, name, quantity };
+}
+
+
+export async function submitBorrowSession(sessionId: string): Promise<BorrowSession> {
+  const db = getAdminFirestore();
+  const ref = db.collection(BORROW_SESSIONS_COLLECTION).doc(sessionId);
+
+  const [doc, items] = await Promise.all([ref.get(), getBorrowItems(sessionId)]);
+
+  if (!doc.exists) {
+    throw new Error("Borrow session not found");
+  }
+
+  const data = doc.data()!;
+
+  if (data.status !== "Draft") {
+    throw new Error(`Cannot submit a session with status "${data.status}"`);
+  }
+
+  if (items.length === 0) {
+    throw new Error("Cannot submit a session with no items");
+  }
+
+  await ref.update({ status: "Sent", sentAt: FieldValue.serverTimestamp() });
+
+  return { id: doc.id, controlNo: data.controlNo, status: "Sent" };
 }
 
 export type BorrowApproval = {
@@ -174,12 +335,12 @@ export type BorrowActivity = {
 };
 
 export type BreakageItem = {
-  id: string | number;
+  id: string;
   item: string;
   quantity: number;
   student: string;
   date: string;
-  status: string;
+  status: "unreturned" | "resolved";
   period: "daily" | "weekly" | "monthly" | "semester";
 };
 
@@ -225,10 +386,6 @@ export type NonChtmBorrowing = {
   contact: string;
   status: "pending" | "approved" | "returned";
 };
-
-export async function getLmoCurrentIssueDraft(): Promise<BorrowSession | null> {
-  return null;
-}
 
 export async function getChtmReturnBorrowings(): Promise<ReturnBorrowing[]> {
   return [];
@@ -424,23 +581,13 @@ function looksLikeCategory(text: string) {
   return CATEGORY_HINTS.some((hint) => lower.includes(hint));
 }
 
-async function loadInventoryImportRows(floor?: string): Promise<InventoryImportDoc[]> {
+async function loadInventoryImportRows(): Promise<InventoryImportDoc[]> {
   try {
     const db = getAdminFirestore();
-    
-    let query: FirebaseFirestore.Query = db.collection(INVENTORY_COLLECTION);
-
-    // selected floor
-    if (floor && floor !== "All") {
-      const formattedSourceName = floor.toLowerCase().replace(" ", "") + ".json";
-      query = query.where("floor", "==", floor);
-    }
-
-    const snapshot = await query.orderBy("rowIndex", "asc").get();
+    const snapshot = await db.collection(INVENTORY_COLLECTION).orderBy("rowIndex", "asc").get();
 
     return snapshot.docs.map((document) => document.data() as InventoryImportDoc);
-  } catch (error) {
-    console.error("Error fetching inventory rows:", error);
+  } catch {
     return [];
   }
 }
@@ -502,8 +649,8 @@ function buildInventoryCategories(rows: InventoryImportDoc[]): InventoryCategory
     .filter((category) => category.items.length > 0);
 }
 
-export async function getInventoryStats(floor?: string): Promise<InventoryStats> {
-  const categories = await getInventoryCategories(floor);
+export async function getInventoryStats(): Promise<InventoryStats> {
+  const categories = await getInventoryCategories();
 
   return {
     equipmentTypes: categories.reduce((sum, category) => sum + category.items.length, 0),
@@ -513,8 +660,8 @@ export async function getInventoryStats(floor?: string): Promise<InventoryStats>
   };
 }
 
-export async function getInventoryCategories(floor?: string): Promise<InventoryCategory[]> {
-  const rows = await loadInventoryImportRows(floor); 
+export async function getInventoryCategories(): Promise<InventoryCategory[]> {
+  const rows = await loadInventoryImportRows();
   return buildInventoryCategories(rows);
 }
 
@@ -653,7 +800,7 @@ export async function getStudentBorrowRequests(): Promise<StudentBorrowRequest[]
 }
 
 export async function getStudentBorrowDraft(): Promise<BorrowSession | null> {
-  return null;
+  return findDraftSession();
 }
 
 export async function getStudentBorrowings(): Promise<StudentBorrowing[]> {
