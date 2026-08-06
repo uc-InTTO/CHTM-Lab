@@ -1,5 +1,5 @@
 // app/lmo/borrow/page.tsx
-import { getLmoCurrentIssueDraft, getBorrowItems } from "../../lib/data";
+import { getLmoCurrentIssueDraft, getBorrowItems, getApprovedBorrowRequests } from "../../lib/data";
 import LmoBorrowItemsPanel from "../../ui/lmo-borrow-items-panel";
 import BorrowActionsPanel from "../../ui/borrow-actions-panel";
 import { PencilIcon } from "../../ui/icons"; 
@@ -8,19 +8,8 @@ export default async function LmoBorrowPage() {
   const session = await getLmoCurrentIssueDraft();
   const items = session ? await getBorrowItems(session.id) : [];
 
-  const pendingApprovedRequest = {
-    controlNo: "16162",
-    studentName: "DELA CRUZ, JUAN",
-    idNumber: "XX-XXXX-XXX",
-    floor: "3",
-    section: "LFM 3C",
-    courseSubject: "HM 101",
-    timeIn: "08:00",
-    timeOut: "12:00",
-    activityTitle: "Basic Culinary Arts Lab",
-    instructor: "Chef Ramos",
-    custodianIssued: "Mr. Santos"
-  };
+  const approved = await getApprovedBorrowRequests(1);
+  const pendingApprovedRequest = approved && approved.length > 0 ? approved[0] : null;
 
   return (
     <div className="flex flex-col h-full px-8 py-8 bg-gray-50/50 min-h-screen">

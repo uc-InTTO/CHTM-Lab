@@ -1,5 +1,8 @@
 "use client";
 
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { showToast } from "./toast";
 import type { BorrowSession, BorrowItem } from "../lib/data";
 
 function CheckIcon() {
@@ -17,6 +20,9 @@ export default function LmoBorrowItemsPanel({
   session: BorrowSession;
   items: BorrowItem[];
 }) {
+  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   return (
     <div className="bg-white rounded-2xl overflow-hidden" style={{ width: "340px" }}>
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -54,11 +60,32 @@ export default function LmoBorrowItemsPanel({
 
       <div className="px-4 pb-4">
         <button
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          onClick={() =>
+            startTransition(async () => {
+              setIsSubmitting(true);
+              try {
+                const res = await fetch("/api/borrow", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "submit", payload: { sessionId: session.id } }),
+                });
+                const json = await res.json();
+                if (!res.ok || !json?.success) throw new Error(json?.message || "Submit failed");
+                showToast("Borrow session submitted", "success");
+                router.refresh();
+              } catch (err) {
+                alert("Could not submit borrow session.");
+              } finally {
+                setIsSubmitting(false);
+              }
+            })
+          }
+          disabled={isSubmitting}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 ${isSubmitting ? "opacity-60 pointer-events-none" : ""}`}
           style={{ backgroundColor: "#16a34a" }}
         >
           <CheckIcon />
-          Issue
+          {isSubmitting ? "Submitting…" : "Issue"}
         </button>
       </div>
     </div>

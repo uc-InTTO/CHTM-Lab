@@ -1,4 +1,7 @@
 import { getPendingApprovals } from "../../lib/data";
+import ApproveButton from "../../ui/approve-button";
+import { getApprovedBorrowRequests } from "../../lib/data";
+import AddEquipmentApprovedButton from "../../ui/add-equipment-approved-button";
 
 function ClockIcon() {
   return (
@@ -6,6 +9,32 @@ function ClockIcon() {
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
     </svg>
+  );
+}
+
+async function ApprovedList() {
+  const approved = await getApprovedBorrowRequests(10);
+  if (!approved || approved.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-6 text-sm text-gray-400">No approved requests</div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-gray-100">
+      {approved.map((a) => (
+        <div key={a.id} className="px-5 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">#{a.controlNo}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{a.studentName} · {a.instructor} · Floor {a.floor}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <AddEquipmentApprovedButton sessionId={String(a.id)} />
+            <button className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Tap to Issue</button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -21,6 +50,15 @@ export default async function LmoBorrowApprovalsPage() {
           <span className="font-medium" style={{ color: "#16a34a" }}>Live</span>{" "}
           <span className="inline-block w-2.5 h-2.5 rounded-full align-middle" style={{ backgroundColor: "#22c55e" }} />
         </p>
+      </div>
+
+      <div className="mt-6 mb-3">
+        <h3 className="text-sm font-bold text-gray-900">Approved — Ready to Issue</h3>
+      </div>
+
+      <div className="rounded-2xl flex flex-col mb-6" style={{ border: "1.5px dashed #d1d5db" }}>
+ 
+        <ApprovedList />
       </div>
 
       <div className="flex items-center gap-2 text-gray-400 mb-3">
@@ -47,12 +85,7 @@ export default async function LmoBorrowApprovalsPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: "#16a34a" }}
-                  >
-                    Approve
-                  </button>
+                  <ApproveButton sessionId={String(approval.id)} />
                   <button className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
                     Reject
                   </button>

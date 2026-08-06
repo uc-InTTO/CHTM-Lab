@@ -2,7 +2,9 @@
 "use client";
 
 import React, { useState, useEffect, useTransition } from "react";
-import { addBorrowItem, fetchFloorData } from "../lib/actions";
+import { useRouter } from "next/navigation";
+import { showToast } from "./toast";
+import { fetchFloorData } from "../lib/actions";
 import { BorrowItem } from "../lib/data";
 import AddEquipmentModal from "./add-equipment-modal"; 
 interface LmoBorrowItemsPanelProps {
@@ -14,6 +16,7 @@ export default function LmoBorrowItemsPanel({ session, items }: LmoBorrowItemsPa
   const [isPending, startTransition] = useTransition();
   const [availableInventory, setAvailableInventory] = useState<any[]>([]);
   const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false); // ✅ Manage state indicator
+  const router = useRouter();
 
   // Fetch available catalogue metrics tied onto active session floor layers
   useEffect(() => {
@@ -37,7 +40,16 @@ export default function LmoBorrowItemsPanel({ session, items }: LmoBorrowItemsPa
   const handleModalAddEquipmentItem = (itemName: string, qty: number) => {
     startTransition(async () => {
       try {
-        await addBorrowItem(session.id, itemName, qty);
+        const res = await fetch("/api/borrow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "addItem", payload: { sessionId: session.id, name: itemName, quantity: qty } }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.success) throw new Error(json?.message || "Could not add item");
+        showToast("Item added", "success");
+        const router = useRouter();
+        router.refresh();
       } catch (error) {
         alert("Failed to append equipment row to current tracking list.");
       }

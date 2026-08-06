@@ -2,8 +2,9 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { showToast } from "./toast";
 import { BorrowingModal } from "./new-session-button";
-import { createBorrowDraft } from "../lib/actions";
 import { CartIcon } from "./icons"; // adjust based on your icon path
 
 interface BorrowActionsPanelProps {
@@ -12,6 +13,7 @@ interface BorrowActionsPanelProps {
 
 export default function BorrowActionsPanel({ prefilledRequest }: BorrowActionsPanelProps) {
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activePrefill, setActivePrefill] = useState<any>(null);
   
@@ -31,11 +33,19 @@ export default function BorrowActionsPanel({ prefilledRequest }: BorrowActionsPa
   const handleSaveDraft = async (formData: any) => {
     startTransition(async () => {
       try {
-        await createBorrowDraft(formData);
+        const res = await fetch("/api/borrow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "createDraft", payload: formData }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.success) throw new Error(json?.message || "Could not create draft");
         setIsModalOpen(false);
         setActivePrefill(null);
+        showToast("Draft saved", "success");
+        router.refresh();
       } catch (err) {
-        alert("Could not initialize document record draft.");
+        showToast("Could not initialize document record draft", "error");
       }
     });
   };
@@ -51,16 +61,40 @@ export default function BorrowActionsPanel({ prefilledRequest }: BorrowActionsPa
               Approved Req. <span className="font-bold">#{prefilledRequest.controlNo}</span> — Ready to Issue
             </p>
           </div>
-          <button 
-            type="button"
-            onClick={() => {
-              setActivePrefill(prefilledRequest);
-              setIsModalOpen(true);
-            }}
-            className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2 rounded-xl shadow-sm transition-all"
-          >
-            Tap to Issue
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              type="button"
+              onClick={() => {
+                setActivePrefill(prefilledRequest);
+                setIsModalOpen(true);
+              }}
+              className="text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 px-4 py-2 rounded-xl shadow-sm transition-all"
+            >
+              Tap to Issue
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/borrow", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "createDraftFromApproved", payload: { sessionId: prefilledRequest.id } }),
+                  });
+                  const json = await res.json();
+                  if (!res.ok || !json?.success) throw new Error(json?.message || "Could not create draft");
+                  showToast("Draft prepared — open Borrow page to add items", "success");
+                  router.push("/lmo/borrow");
+                } catch (err) {
+                  showToast("Could not prepare draft for adding equipment.", "error");
+                }
+              }}
+              className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-2 rounded-xl shadow-sm transition-all"
+            >
+              Add Equipment
+            </button>
+          </div>
         </div>
       )}
 

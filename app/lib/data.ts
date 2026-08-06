@@ -294,7 +294,7 @@ export async function submitBorrowSession(sessionId: string): Promise<BorrowSess
 }
 
 export type BorrowApproval = {
-  id: number;
+  id: string;
   controlNo: string;
   requestedBy: string;
   submittedAt: string;
@@ -302,7 +302,51 @@ export type BorrowApproval = {
 };
 
 export async function getPendingApprovals(): Promise<BorrowApproval[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db
+      .collection(BORROW_SESSIONS_COLLECTION)
+      .where("status", "==", "Sent")
+      .orderBy("sentAt", "desc")
+      .get();
+
+    const approvals: BorrowApproval[] = [];
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const itemsSnapshot = await db
+        .collection(BORROW_ITEMS_COLLECTION)
+        .where("sessionId", "==", doc.id)
+        .get();
+
+      approvals.push({
+        id: doc.id,
+        controlNo: data.controlNo || "",
+        requestedBy: data.studentName || "",
+        submittedAt: data.sentAt || "",
+        itemCount: itemsSnapshot.size,
+      });
+    }
+
+    return approvals;
+  } catch (err) {
+    return [];
+  }
+}
+
+export async function getApprovedBorrowRequests(limit = 10): Promise<BorrowSession[]> {
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db
+      .collection(BORROW_SESSIONS_COLLECTION)
+      .where("status", "==", "Approved")
+      .orderBy("approvedAt", "desc")
+      .limit(limit)
+      .get();
+
+    return snapshot.docs.map((doc) => toBorrowSession(doc.id, doc.data()));
+  } catch (err) {
+    return [];
+  }
 }
 
 export type MyListRecord = {

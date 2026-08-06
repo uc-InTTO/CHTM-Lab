@@ -56,17 +56,20 @@ export async function createBorrowDraft(details: any) {
     activityTitle: details.activityTitle || "",
     instructor: details.instructor || "",
     custodianIssued: details.custodianIssued || "",
-    createdAt: FieldValue.serverTimestamp
+    createdAt: FieldValue.serverTimestamp()
   };
 
   
   const ref = await db.collection(BORROW_SESSIONS_COLLECTION).add(documentPayload);
 
+  // Revalidate the borrow pages so server components pick up the new draft
   revalidatePath("/borrow");
-  return { 
-    id: ref.id, 
+  revalidatePath("/lmo/borrow");
+  revalidatePath("/lmo/borrow-approvals");
+  return {
+    id: ref.id,
     ...documentPayload,
-    createdAt: new Date().toISOString() // 
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -87,8 +90,59 @@ export async function addBorrowItem(sessionId: string, name: string, quantity: n
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  // Revalidate borrow pages
   revalidatePath("/borrow");
+  revalidatePath("/lmo/borrow");
+  revalidatePath("/lmo/borrow-approvals");
   return { id: ref.id, sessionId, name, quantity };
+}
+
+export async function approveBorrowSession(sessionId: string, approver: string | null = null) {
+  const db = getAdminFirestore();
+  try {
+    const ref = db.collection(BORROW_SESSIONS_COLLECTION).doc(String(sessionId));
+    const doc = await ref.get();
+    if (!doc.exists) throw new Error("Borrow session not found");
+
+    await ref.update({ status: "Approved", approvedAt: new Date().toISOString(), approvedBy: approver || "system" });
+    revalidatePath("/lmo/borrow");
+    revalidatePath("/borrow");
+    return { id: doc.id, controlNo: doc.data()?.controlNo, status: "Approved" };
+  } catch (err) {
+    console.error("approveBorrowSession error", err);
+    throw err;
+  }
+}
+
+export async function createDraftFromApproved(approvedSessionId: string) {
+  const db = getAdminFirestore();
+  const approvedRef = db.collection(BORROW_SESSIONS_COLLECTION).doc(String(approvedSessionId));
+  const approvedDoc = await approvedRef.get();
+  if (!approvedDoc.exists) throw new Error("Approved session not found");
+
+  const data = approvedDoc.data() || {};
+
+  // create a new draft copying relevant fields
+  const payload: any = {
+    controlNo: data.controlNo || (await nextControlNo()),
+    status: "Draft",
+    studentName: data.studentName || "",
+    floor: data.floor || "",
+    date: data.date || "",
+    idNumber: data.idNumber || "",
+    section: data.section || "",
+    courseSubject: data.courseSubject || "",
+    timeIn: data.timeIn || "",
+    timeOut: data.timeOut || "",
+    activityTitle: data.activityTitle || "",
+    instructor: data.instructor || "",
+    custodianIssued: data.custodianIssued || "",
+    createdAt: FieldValue.serverTimestamp(),
+  };
+
+  const ref = await db.collection(BORROW_SESSIONS_COLLECTION).add(payload);
+  revalidatePath("/lmo/borrow");
+  return { id: ref.id, ...payload };
 }
 
 // MOCK DATA
