@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { showToast } from "./toast";
 import type { WasteStats, WasteRecord } from "../lib/data";
 
 function TrashIcon() {
@@ -55,9 +57,20 @@ export default function WastePanel({
   stats: WasteStats;
   records: WasteRecord[];
 }) {
+  const router = useRouter();
+
+  const [schedule, setSchedule] = useState("");
+  const [section, setSection] = useState("");
+  const [courseInput, setCourseInput] = useState("");
+  const [activityInput, setActivityInput] = useState("");
+  const [instructorInput, setInstructorInput] = useState("");
+
   const [biodeg, setBiodeg] = useState("0");
   const [nonBio, setNonBio] = useState("0");
   const [usedOil, setUsedOil] = useState("0");
+  const [checkedBy, setCheckedBy] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div>
@@ -103,13 +116,13 @@ export default function WastePanel({
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Schedule</label>
-              <select className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
+              <select value={schedule} onChange={(e) => setSchedule(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
                 <option value="">Schedule</option>
               </select>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Section</label>
-              <select className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
+              <select value={section} onChange={(e) => setSection(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
                 <option value="">Section</option>
               </select>
             </div>
@@ -117,17 +130,19 @@ export default function WastePanel({
 
           <div className="mb-4">
             <label className="block text-xs text-gray-500 mb-1">Course / Subject</label>
-            <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+            <input value={courseInput} onChange={(e) => setCourseInput(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
           </div>
 
           <div className="mb-4">
             <label className="block text-xs text-gray-500 mb-1">Activity</label>
-            <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+            <input value={activityInput} onChange={(e) => setActivityInput(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
           </div>
 
           <div className="mb-4">
             <label className="block text-xs text-gray-500 mb-1">Instructor</label>
             <input
+              value={instructorInput}
+              onChange={(e) => setInstructorInput(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400"
               placeholder="Type or select instructor"
             />
@@ -172,6 +187,8 @@ export default function WastePanel({
           <div className="mb-4">
             <label className="block text-xs text-gray-500 mb-1">Checked By (Custodian)</label>
             <input
+              value={checkedBy}
+              onChange={(e) => setCheckedBy(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400"
               placeholder="Enter custodian name"
             />
@@ -180,17 +197,55 @@ export default function WastePanel({
           <div className="mb-5">
             <label className="block text-xs text-gray-500 mb-1">Notes (Optional)</label>
             <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 resize-none"
               rows={3}
             />
           </div>
 
           <button
+            onClick={async () => {
+              setSubmitting(true);
+              try {
+                const payload = {
+                  schedule,
+                  section,
+                  course: courseInput,
+                  activity: activityInput,
+                  instructor: instructorInput,
+                  biodegKg: Number(biodeg) || 0,
+                  nonBiodegKg: Number(nonBio) || 0,
+                  usedOilKg: Number(usedOil) || 0,
+                  checkedBy,
+                  notes,
+                };
+
+                const res = await fetch("/api/waste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                if (!res.ok) {
+                  const txt = await res.text();
+                  showToast(`Save failed: ${txt}`, "error");
+                  setSubmitting(false);
+                  return;
+                }
+
+                showToast("Waste record saved", "success");
+                // clear
+                setSchedule(""); setSection(""); setCourseInput(""); setActivityInput(""); setInstructorInput(""); setBiodeg("0"); setNonBio("0"); setUsedOil("0"); setCheckedBy(""); setNotes("");
+                router.refresh();
+              } catch (err) {
+                // eslint-disable-next-line no-console
+                console.error(err);
+                showToast("Save failed", "error");
+              } finally {
+                setSubmitting(false);
+              }
+            }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white"
             style={{ backgroundColor: "#16a34a" }}
           >
             <SaveIcon />
-            Log Waste Record
+            {submitting ? "Saving..." : "Log Waste Record"}
           </button>
         </div>
 

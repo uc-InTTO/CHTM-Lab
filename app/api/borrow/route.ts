@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createBorrowDraft, submitBorrowSession, addBorrowItem, approveBorrowSession } from "../../lib/actions";
 import { createDraftFromApproved } from "../../lib/actions";
+import { issueBorrowSession } from "../../lib/actions";
 
 export async function POST(req: Request) {
   try {
@@ -24,6 +25,11 @@ export async function POST(req: Request) {
 
     if (action === "approve") {
       const result = await approveBorrowSession(payload?.sessionId, payload?.approver || null);
+      return NextResponse.json({ success: true, data: result });
+    }
+
+    if (action === "issue") {
+      const result = await issueBorrowSession(payload?.sessionId, payload?.issuer || null);
       return NextResponse.json({ success: true, data: result });
     }
 

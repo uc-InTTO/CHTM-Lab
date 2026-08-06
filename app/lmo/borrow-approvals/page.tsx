@@ -2,6 +2,7 @@ import { getPendingApprovals } from "../../lib/data";
 import ApproveButton from "../../ui/approve-button";
 import { getApprovedBorrowRequests } from "../../lib/data";
 import AddEquipmentApprovedButton from "../../ui/add-equipment-approved-button";
+import IssueButton from "../../ui/issue-button";
 
 function ClockIcon() {
   return (
@@ -28,9 +29,9 @@ async function ApprovedList() {
             <p className="text-sm font-semibold text-gray-900">#{a.controlNo}</p>
             <p className="text-xs text-gray-400 mt-0.5">{a.studentName} · {a.instructor} · Floor {a.floor}</p>
           </div>
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             <AddEquipmentApprovedButton sessionId={String(a.id)} />
-            <button className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">Tap to Issue</button>
+            <IssueButton sessionId={String(a.id)} />
           </div>
         </div>
       ))}

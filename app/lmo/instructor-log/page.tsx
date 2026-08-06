@@ -1,5 +1,6 @@
 import { getInstructorLogStats, getInstructorLogs } from "../../lib/data";
 import LogTabs from "../../ui/log-tabs";
+import InstructorLogModal from "../../ui/instructor-log-modal";
 
 function ClockIcon() {
   return (
@@ -40,16 +41,7 @@ export default async function LmoInstructorLogPage() {
           <h1 className="text-2xl font-bold text-gray-900">Instructor Log</h1>
           <p className="text-sm text-gray-500 mt-0.5">Track instructor lab sessions</p>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ backgroundColor: "#2e7d32" }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" x2="12" y1="5" y2="19" />
-            <line x1="5" x2="19" y1="12" y2="12" />
-          </svg>
-          New Log
-        </button>
+        <InstructorLogModal />
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-6">

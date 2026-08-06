@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { showToast } from "./toast";
 import type { BreakageStats, BreakageReport } from "../lib/data";
 
 type SubTab = "report" | "unreturned" | "all";
@@ -57,6 +59,19 @@ export default function BreakagesPanel({
   const [filter, setFilter] = useState<FilterType>("all");
   const [qty, setQty] = useState(1);
   const [damageType, setDamageType] = useState("Broken");
+
+  const router = useRouter();
+
+  // form state
+  const [controlNo, setControlNo] = useState("");
+  const [station, setStation] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
+  const [amount, setAmount] = useState("0.00");
+  const [receiptNo, setReceiptNo] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const unreturnedCount = reports.filter((r) => r.damageType === "unreturned").length;
 
@@ -140,13 +155,15 @@ export default function BreakagesPanel({
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Control No. (Optional)</label>
                 <input
+                  value={controlNo}
+                  onChange={(e) => setControlNo(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400"
                   placeholder="Auto-fill from record"
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Station</label>
-                <select className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
+                <select value={station} onChange={(e) => setStation(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 bg-white">
                   <option value="">Station</option>
                 </select>
               </div>
@@ -155,17 +172,17 @@ export default function BreakagesPanel({
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Student Name</label>
-                <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+                <input value={studentName} onChange={(e) => setStudentName(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">ID No.</label>
-                <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+                <input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
               </div>
             </div>
 
             <div className="mb-4">
               <label className="block text-xs text-gray-500 mb-1">Item Description</label>
-              <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+              <input value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -208,30 +225,69 @@ export default function BreakagesPanel({
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Amount (₱)</label>
                 <input
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400"
-                  defaultValue="0.00"
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Official Receipt No.</label>
-                <input className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
+                <input value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400" />
               </div>
             </div>
 
             <div className="mb-5">
               <label className="block text-xs text-gray-500 mb-1">Description / Remarks</label>
               <textarea
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none focus:border-gray-400 resize-none"
                 rows={3}
               />
             </div>
 
             <button
+              onClick={async () => {
+                setSubmitting(true);
+                try {
+                  const payload = {
+                    controlNo,
+                    station,
+                    studentName,
+                    idNumber,
+                    itemDescription,
+                    damageType,
+                    quantity: qty,
+                    amount: parseFloat(amount) || 0,
+                    receiptNo,
+                    remarks,
+                  };
+
+                  const res = await fetch("/api/breakages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+                  if (!res.ok) {
+                    const txt = await res.text();
+                    showToast(`Submit failed: ${txt}`, "error");
+                    setSubmitting(false);
+                    return;
+                  }
+
+                  showToast("Report submitted", "success");
+                  // clear form
+                  setControlNo(""); setStation(""); setStudentName(""); setIdNumber(""); setItemDescription(""); setQty(1); setAmount("0.00"); setReceiptNo(""); setRemarks("");
+                  router.refresh();
+                } catch (err) {
+                  // eslint-disable-next-line no-console
+                  console.error(err);
+                  showToast("Submit failed", "error");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white"
               style={{ backgroundColor: "#16a34a" }}
             >
               <SendIcon />
-              Submit Report
+              {submitting ? "Submitting..." : "Submit Report"}
             </button>
           </div>
 

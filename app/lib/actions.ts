@@ -31,6 +31,7 @@ export async function submitBorrowSession(sessionId: number) {
 
     // refresh the UI
     revalidatePath("/borrow"); 
+    revalidatePath("/lmo/borrow-approvals");
     return { success: true };
   } catch (error) {
     console.error("Error submitting session:", error);
@@ -107,9 +108,29 @@ export async function approveBorrowSession(sessionId: string, approver: string |
     await ref.update({ status: "Approved", approvedAt: new Date().toISOString(), approvedBy: approver || "system" });
     revalidatePath("/lmo/borrow");
     revalidatePath("/borrow");
+    revalidatePath("/lmo/borrow-approvals");
     return { id: doc.id, controlNo: doc.data()?.controlNo, status: "Approved" };
   } catch (err) {
     console.error("approveBorrowSession error", err);
+    throw err;
+  }
+}
+
+export async function issueBorrowSession(sessionId: string, issuer: string | null = null) {
+  const db = getAdminFirestore();
+  try {
+    const ref = db.collection(BORROW_SESSIONS_COLLECTION).doc(String(sessionId));
+    const doc = await ref.get();
+    if (!doc.exists) throw new Error("Borrow session not found");
+
+    await ref.update({ status: "Active", issuedAt: new Date().toISOString(), issuedBy: issuer || "system" });
+    // revalidate relevant pages so active sessions show up
+    revalidatePath("/lmo/borrow");
+    revalidatePath("/borrow");
+    revalidatePath("/lmo/borrow-approvals");
+    return { id: doc.id, controlNo: doc.data()?.controlNo, status: "Active" };
+  } catch (err) {
+    console.error("issueBorrowSession error", err);
     throw err;
   }
 }

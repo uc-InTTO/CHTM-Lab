@@ -8,7 +8,7 @@ export type StatCard = {
 };
 
 export type Notification = {
-  id: number;
+  id: string;
   audience: string;
   sender: string;
   message: string;
@@ -17,7 +17,7 @@ export type Notification = {
 };
 
 export type Announcement = {
-  id: number;
+  id: string;
   title: string;
   status: "Published" | "Draft";
   author: string;
@@ -41,23 +41,65 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function getRecentNotifications(): Promise<Notification[]> {
-  return [];
+  try {
+    const all = await getAllNotifications();
+    return all.slice(0, 5);
+  } catch {
+    return [];
+  }
 }
 
 export async function getAllNotifications(): Promise<Notification[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("announcements").orderBy("createdAt", "desc").limit(20).get();
+
+    const notifications: Notification[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      const time = data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : String(data.createdAt)) : "";
+      return {
+        id: doc.id,
+        audience: "All",
+        sender: data.title || data.author || "Announcement",
+        message: data.body || "",
+        time,
+        group: "Latest",
+      };
+    });
+
+    return notifications;
+  } catch (err) {
+    return [];
+  }
 }
 
 export async function getRecentAnnouncements(): Promise<Announcement[]> {
-  return [];
+  return getAllAnnouncements();
 }
 
 export async function getAllAnnouncements(): Promise<Announcement[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("announcements").orderBy("createdAt", "desc").get();
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: data.title || "",
+        status: data.status || "Draft",
+        author: data.author || "",
+        role: data.role || "",
+        body: data.body || "",
+        time: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : String(data.createdAt)) : "",
+      } as Announcement;
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 export type InstructorLog = {
-  id: number;
+  id: string;
   status: "Active" | "Completed";
   subject: string;
   room: string;
@@ -72,11 +114,38 @@ export type InstructorLogStats = {
 };
 
 export async function getInstructorLogStats(): Promise<InstructorLogStats> {
-  return { activeSessions: 0, completed: 0 };
+  try {
+    const db = getAdminFirestore();
+    const [activeSnap, completedSnap] = await Promise.all([
+      db.collection("instructorLogs").where("status", "==", "Active").get(),
+      db.collection("instructorLogs").where("status", "==", "Completed").get(),
+    ]);
+
+    return { activeSessions: activeSnap.size, completed: completedSnap.size };
+  } catch (err) {
+    return { activeSessions: 0, completed: 0 };
+  }
 }
 
 export async function getInstructorLogs(): Promise<InstructorLog[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("instructorLogs").orderBy("createdAt", "desc").get();
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        status: data.status || "Active",
+        subject: data.course || data.activityTitle || "",
+        room: Array.isArray(data.floors) && data.floors.length ? data.floors[0] : "",
+        date: data.date || "",
+        timeStart: data.timeIn || "",
+        timeEnd: data.timeOut || null,
+      } as InstructorLog;
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 export type Floor = {
@@ -99,17 +168,76 @@ export type FloorLog = {
 };
 
 export async function getFloors(): Promise<Floor[]> {
-  return [
-    { id: 1, floor: "4th Floor", name: "Tribu", status: "Available", sessionsToday: 0, badgeBg: "#f3e8ff", badgeColor: "#7c3aed" },
-    { id: 2, floor: "5th Floor", name: "Laundry Room", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
-    { id: 3, floor: "6th Floor", name: "Linen Room and Hotel Rooms", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
-    { id: 4, floor: "9th Floor", name: "Kitchen Laboratory and Supply Room", status: "Available", sessionsToday: 0, badgeBg: "#dcfce7", badgeColor: "#16a34a" },
-    { id: 5, floor: "10th Floor", name: "Banquet Room, Canao Hall, Canao Kitchen and Lang-ayan Bar", status: "Available", sessionsToday: 0, badgeBg: "#fef3c7", badgeColor: "#d97706" },
-  ];
+  try {
+    const db = getAdminFirestore();
+    const activeSnap = await db.collection("floorLogs").where("status", "==", "Active").get();
+
+    const activeByFloor = new Map<string, number>();
+    for (const doc of activeSnap.docs) {
+      const d = doc.data();
+      const floorName = d.floorName || d.floor || "";
+      activeByFloor.set(floorName, (activeByFloor.get(floorName) || 0) + 1);
+    }
+
+    // sessionsToday: count floorLogs created today per floor
+    const today = new Date();
+    function sameDay(a: Date, b: Date) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    const todaySnap = await db.collection("floorLogs").orderBy("createdAt", "desc").get();
+    const sessionsTodayCount = new Map<string, number>();
+    for (const doc of todaySnap.docs) {
+      const d = doc.data();
+      const ts = d.createdAt && typeof d.createdAt.toDate === "function" ? d.createdAt.toDate() : d.createdAt ? new Date(d.createdAt) : null;
+      if (!ts) continue;
+      if (!sameDay(ts, today)) continue;
+      const floorName = d.floorName || d.floor || "";
+      sessionsTodayCount.set(floorName, (sessionsTodayCount.get(floorName) || 0) + 1);
+    }
+
+    const staticFloors: Floor[] = [
+      { id: 1, floor: "4th Floor", name: "Tribu", status: "Available", sessionsToday: 0, badgeBg: "#f3e8ff", badgeColor: "#7c3aed" },
+      { id: 2, floor: "5th Floor", name: "Laundry Room", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
+      { id: 3, floor: "6th Floor", name: "Linen Room and Hotel Rooms", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
+      { id: 4, floor: "9th Floor", name: "Kitchen Laboratory and Supply Room", status: "Available", sessionsToday: 0, badgeBg: "#dcfce7", badgeColor: "#16a34a" },
+      { id: 5, floor: "10th Floor", name: "Banquet Room, Canao Hall, Canao Kitchen and Lang-ayan Bar", status: "Available", sessionsToday: 0, badgeBg: "#fef3c7", badgeColor: "#d97706" },
+    ];
+
+    return staticFloors.map((f) => ({
+      ...f,
+      status: activeByFloor.has(f.name) ? "Occupied" : "Available",
+      sessionsToday: sessionsTodayCount.get(f.name) || 0,
+    }));
+  } catch (err) {
+    return [
+      { id: 1, floor: "4th Floor", name: "Tribu", status: "Available", sessionsToday: 0, badgeBg: "#f3e8ff", badgeColor: "#7c3aed" },
+      { id: 2, floor: "5th Floor", name: "Laundry Room", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
+      { id: 3, floor: "6th Floor", name: "Linen Room and Hotel Rooms", status: "Available", sessionsToday: 0, badgeBg: "#dbeafe", badgeColor: "#2563eb" },
+      { id: 4, floor: "9th Floor", name: "Kitchen Laboratory and Supply Room", status: "Available", sessionsToday: 0, badgeBg: "#dcfce7", badgeColor: "#16a34a" },
+      { id: 5, floor: "10th Floor", name: "Banquet Room, Canao Hall, Canao Kitchen and Lang-ayan Bar", status: "Available", sessionsToday: 0, badgeBg: "#fef3c7", badgeColor: "#d97706" },
+    ];
+  }
 }
 
 export async function getActiveFloorLogs(): Promise<FloorLog[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("floorLogs").where("status", "==", "Active").orderBy("createdAt", "desc").limit(50).get();
+    return snapshot.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        id: Number(doc.id.slice(0, 8).replace(/[^0-9]/g, "")) || 0,
+        floorName: d.floorName || d.floor || "",
+        room: d.room || "",
+        instructor: d.instructor || "",
+        timeStart: d.timeStart || "",
+        timeEnd: d.timeEnd || null,
+      } as FloorLog;
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 export type BorrowSession = {
@@ -462,11 +590,39 @@ export type BreakageReport = {
 };
 
 export async function getBreakageStats(): Promise<BreakageStats> {
-  return { pending: 0, assessed: 0, charged: 0, resolved: 0 };
+  try {
+    const db = getAdminFirestore();
+    const pendingSnap = await db.collection("breakages").where("status", "==", "unreturned").get();
+    const assessedSnap = await db.collection("breakages").where("status", "==", "assessed").get();
+    const chargedSnap = await db.collection("breakages").where("status", "==", "charged").get();
+    const resolvedSnap = await db.collection("breakages").where("status", "==", "resolved").get();
+
+    return { pending: pendingSnap.size, assessed: assessedSnap.size, charged: chargedSnap.size, resolved: resolvedSnap.size };
+  } catch (err) {
+    return { pending: 0, assessed: 0, charged: 0, resolved: 0 };
+  }
 }
 
 export async function getBreakageReports(): Promise<BreakageReport[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("breakages").orderBy("createdAt", "desc").limit(50).get();
+    return snapshot.docs.map((doc) => {
+      const d = doc.data();
+      return {
+        id: Number(doc.id.slice(0, 8).replace(/[^0-9]/g, "")) || 0,
+        itemName: d.itemDescription || "",
+        qty: d.quantity || 1,
+        student: d.studentName || "",
+        studentId: d.idNumber || "",
+        amount: d.amount || 0,
+        damageType: d.damageType || "broken",
+        status: d.status || "pending",
+      } as BreakageReport;
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 export type WasteStats = {
@@ -495,11 +651,77 @@ export type WasteRecord = {
 };
 
 export async function getWasteStats(): Promise<WasteStats> {
-  return { todayKg: 0, avgPerSession: 0, totalKg: 0, sessionsLogged: 0, biodegKg: 0, nonBiodegKg: 0, usedOilKg: 0 };
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("waste").orderBy("createdAt", "desc").get();
+
+    let totalKg = 0;
+    let biodegKg = 0;
+    let nonBiodegKg = 0;
+    let usedOilKg = 0;
+
+    for (const doc of snapshot.docs) {
+      const d = doc.data();
+      const b = Number(d.biodegKg) || 0;
+      const nb = Number(d.nonBiodegKg) || 0;
+      const u = Number(d.usedOilKg) || 0;
+      biodegKg += b;
+      nonBiodegKg += nb;
+      usedOilKg += u;
+      totalKg += b + nb + u;
+    }
+
+    const sessionsLogged = snapshot.size;
+
+    const today = new Date();
+    function sameDay(a: Date, b: Date) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    let todayKg = 0;
+    for (const doc of snapshot.docs) {
+      const d = doc.data();
+      const ts = d.createdAt && typeof d.createdAt.toDate === "function" ? d.createdAt.toDate() : d.createdAt ? new Date(d.createdAt) : null;
+      if (!ts) continue;
+      if (sameDay(ts, today)) {
+        todayKg += (Number(d.biodegKg) || 0) + (Number(d.nonBiodegKg) || 0) + (Number(d.usedOilKg) || 0);
+      }
+    }
+
+    const avgPerSession = sessionsLogged > 0 ? Number((totalKg / sessionsLogged).toFixed(1)) : 0;
+
+    return { todayKg, avgPerSession, totalKg, sessionsLogged, biodegKg, nonBiodegKg, usedOilKg };
+  } catch (err) {
+    return { todayKg: 0, avgPerSession: 0, totalKg: 0, sessionsLogged: 0, biodegKg: 0, nonBiodegKg: 0, usedOilKg: 0 };
+  }
 }
 
 export async function getWasteRecords(): Promise<WasteRecord[]> {
-  return [];
+  try {
+    const db = getAdminFirestore();
+    const snapshot = await db.collection("waste").orderBy("createdAt", "desc").limit(200).get();
+
+    return snapshot.docs.map((doc) => {
+      const d = doc.data();
+      const ts = d.createdAt && typeof d.createdAt.toDate === "function" ? d.createdAt.toDate() : d.createdAt ? new Date(d.createdAt) : new Date();
+      return {
+        id: Number(doc.id.slice(0, 8).replace(/[^0-9]/g, "")) || 0,
+        schedule: d.schedule || "",
+        section: d.section || "",
+        course: d.course || "",
+        activity: d.activity || "",
+        instructor: d.instructor || "",
+        biodegKg: Number(d.biodegKg) || 0,
+        nonBiodegKg: Number(d.nonBiodegKg) || 0,
+        usedOilKg: Number(d.usedOilKg) || 0,
+        checkedBy: d.checkedBy || "",
+        notes: d.notes || "",
+        date: ts.toISOString(),
+      } as WasteRecord;
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 export type LmoMyListItem = {

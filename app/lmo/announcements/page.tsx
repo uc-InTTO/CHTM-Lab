@@ -1,4 +1,6 @@
 import { getAllAnnouncements } from "../../lib/data";
+import AnnouncementModal from "../../ui/announcement-modal";
+import AnnouncementEditor from "../../ui/announcement-editor";
 
 function PencilIcon() {
   return (
@@ -26,17 +28,17 @@ function AddAnnouncementIcon() {
 
 function AddAnnoncementModal() {
   return (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div className="fixed inset-0 flex text-gray-900 items-center justify-center bg-gray-100 bg-opacity-50 z-50">
       <div className="bg-white rounded-2xl p-6 max-w-lg w-full h-fit ">
         <p className="text-lg font-bold text-gray-900 mb-4">New Announcement</p>
         <div className="flex flex-col gap-1.5">
-          <p className="text-gray-500 text-sm">Title</p>
-          <input className="border border-gray-500/40 rounded-xl p-1.5"></input>
-          <p className="text-gray-500 text-sm">Content</p>
-          <input className="border border-gray-500/40 rounded-xl p-1 min-h-32"></input>
+          <p className="text-gray-800 text-sm">Title</p>
+          <input className="border text-gray-80 border-gray-500/40 rounded-xl p-1.5"></input>
+          <p className="text-gray-800 text-sm">Content</p>
+          <input className="border text-gray-80 border-gray-500/40 rounded-xl p-1 min-h-32"></input>
       
         {/* buttons remove cancel button to the x then + cancel modal */}
-        <div className="flex flex-row w-full justify-between mt-5 gap-2">
+        <div className="flex flex-row w-full text-gray-800 justify-between mt-5 gap-2">
           <button className="border rounded-xl border-gray-500/40 p-1.5 w-full hover:bg-gray-200/60">Cancel</button>   
           <button className="border text-white bg-emerald-700 rounded-xl border-gray-500/40 p-1 w-full hover:bg-green-700/80"> 
           
@@ -59,16 +61,7 @@ export default async function LmoAnnouncementsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage and publish announcements</p>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-          style={{ backgroundColor: "#2e7d32" }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" x2="12" y1="5" y2="19" />
-            <line x1="5" x2="19" y1="12" y2="12" />
-          </svg>
-          New
-        </button>
+        <AnnouncementModal />
       </div>
 
       {announcements.length === 0 ? (
@@ -93,9 +86,9 @@ export default async function LmoAnnouncementsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-400">
-                  <button className="hover:text-gray-600 transition-colors">
-                    <PencilIcon />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <AnnouncementEditor initial={{ id: a.id, title: a.title, body: a.body, status: a.status }} />
+                  </div>
                   <button className="hover:text-gray-600 transition-colors">
                     <EyeOffIcon />
                   </button>
